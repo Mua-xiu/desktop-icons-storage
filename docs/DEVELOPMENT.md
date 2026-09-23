@@ -170,7 +170,7 @@ dotnet build DesktopIconsStorage.sln -c Release
 ### 7.1 便携版
 
 ```powershell
-.\scripts\build-release.ps1 -Version 0.2.0 -SkipInstaller
+.\scripts\build-release.ps1 -Version 0.4.0 -SkipInstaller
 ```
 
 发布参数包括：
@@ -178,7 +178,8 @@ dotnet build DesktopIconsStorage.sln -c Release
 - `--self-contained true`
 - `PublishSingleFile=true`
 - `IncludeNativeLibrariesForSelfExtract=true`
-- `EnableCompressionInSingleFile=true`
+- `EnableCompressionInSingleFile=false`：增大下载文件，但避免压缩程序集启动时解压到私有内存；本项目的 8 盒 A/B 测试中，私有提交减少约 72 MiB。
+- 默认不启用 `PublishReadyToRun`：A/B 测试中没有降低常驻内存，发布文件约增大 16 MiB。
 - 不生成 PDB
 
 ### 7.2 安装器
@@ -186,7 +187,7 @@ dotnet build DesktopIconsStorage.sln -c Release
 安装 Inno Setup 6 后执行：
 
 ```powershell
-.\scripts\build-release.ps1 -Version 0.2.0
+.\scripts\build-release.ps1 -Version 0.4.0
 ```
 
 生成目录：
@@ -205,8 +206,8 @@ artifacts/
 推送语义化版本标签会触发 `.github/workflows/release.yml`：
 
 ```powershell
-git tag -a v0.2.0 -m "DesktopIconsStorage 0.2.0"
-git push origin v0.2.0
+git tag -a v0.4.0 -m "DesktopIconsStorage 0.4.0"
+git push origin v0.4.0
 ```
 
 云端会构建安装器、便携版和 SHA256 校验文件，并附加到对应 Release。

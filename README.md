@@ -43,7 +43,7 @@ DesktopIconsStorage 是一款原生 Windows 桌面图标收纳工具。它通过
 | `DesktopIconsStorage-<version>-win-x64.exe`       | 便携版。直接运行，不创建快捷方式和卸载信息。                           |
 | `SHA256SUMS.txt`                                  | 用于校验下载文件完整性。                                               |
 
-两种程序都内置 .NET 8 运行时，不需要安装 SDK、配置环境变量或安装驱动。
+两种程序都内置 .NET 8 运行时，不需要安装 SDK、配置环境变量或安装驱动。发布版不压缩单文件程序集，以换取更低的运行时私有内存占用；下载文件会相应更大。
 
 ## 安装与卸载
 
@@ -92,7 +92,7 @@ dotnet build DesktopIconsStorage.sln
 生成自包含便携版和安装器：
 
 ```powershell
-.\scripts\build-release.ps1 -Version 0.3.0
+.\scripts\build-release.ps1 -Version 0.4.0
 ```
 
 安装器构建需要 Inno Setup 6；使用 `-SkipInstaller` 可以只生成便携版。推送 `v*` 标签时，GitHub Actions 会自动生成 Release 产物。
