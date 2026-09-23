@@ -73,16 +73,23 @@ public static class JsonStore
 
     public static void Save<T>(string path, T value)
     {
+        string? tmp = null;
         try
         {
             Directory.CreateDirectory(ConfigDir);
-            var tmp = path + ".tmp";
+            // 唯一临时文件避免快速连续保存时相互覆盖同一个 .tmp 文件。
+            tmp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
             File.WriteAllText(tmp, JsonSerializer.Serialize(value, Options));
             File.Move(tmp, path, true);
         }
         catch
         {
             // 持久化失败不致命，下次保存再试
+            try
+            {
+                if (tmp != null && File.Exists(tmp)) File.Delete(tmp);
+            }
+            catch { /* 临时文件清理失败不覆盖原始保存错误 */ }
         }
     }
 }

@@ -37,12 +37,6 @@
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
-        <Style TargetType="ComboBox">
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="Background" Value="{DynamicResource ControlBg}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderSoft}"/>
-            <Setter Property="Padding" Value="8,5"/>
-        </Style>
     </Window.Resources>
 
     <Grid Margin="24">

@@ -22,7 +22,7 @@ public class AppHost : IDisposable
     private TrayManager? _tray;
     private SingleInstanceService? _single;
     private DispatcherTimer? _watchdog;
-    private System.Threading.Timer? _saveDebounce;
+    private DispatcherTimer? _saveDebounce;
     private SettingsWindow? _settingsWindow;
 
     public bool IsDarkTheme => Settings.ThemeMode switch
@@ -180,8 +180,24 @@ public class AppHost : IDisposable
 
     public void PersistLayout()
     {
-        _saveDebounce ??= new System.Threading.Timer(_ => Blocks.Save(), null, Timeout.Infinite, Timeout.Infinite);
-        _saveDebounce.Change(800, Timeout.Infinite);
+        // 布局模型由 WPF UI 线程修改；在同一线程防抖保存，避免后台 Timer
+        // 与新建/删除收纳盒并发枚举列表，造成布局文件偶发回退或丢项。
+        _saveDebounce ??= new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = TimeSpan.FromMilliseconds(800)
+        };
+        _saveDebounce.Stop();
+        _saveDebounce.Tick -= OnLayoutSaveDebounceTick;
+        _saveDebounce.Tick += OnLayoutSaveDebounceTick;
+        _saveDebounce.Start();
+    }
+
+    private void OnLayoutSaveDebounceTick(object? sender, EventArgs e)
+    {
+        if (_saveDebounce == null) return;
+        _saveDebounce.Stop();
+        _saveDebounce.Tick -= OnLayoutSaveDebounceTick;
+        Blocks.Save();
     }
 
     // ---------- 块操作 ----------
@@ -406,7 +422,9 @@ public class AppHost : IDisposable
     {
         SystemEvents.UserPreferenceChanged -= OnSystemPreferenceChanged;
         _watchdog?.Stop();
-        _saveDebounce?.Dispose();
+        _saveDebounce?.Stop();
+        if (_saveDebounce != null)
+            _saveDebounce.Tick -= OnLayoutSaveDebounceTick;
         Blocks?.Save();
         JsonStore.Save(JsonStore.SettingsPath, Settings);
         foreach (var w in Windows.ToList()) w.Dispose();
