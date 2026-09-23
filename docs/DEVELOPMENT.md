@@ -12,7 +12,7 @@
 - 安装器：Inno Setup 6
 - CI/CD：GitHub Actions
 
-应用使用顶层无边框 `WS_POPUP` 窗口，并把桌面宿主设置为 owner。收纳筐位于壁纸之上、普通应用窗口之下，不通过 `SetParent` 创建 WPF 子窗口。
+应用使用顶层无边框 `WS_POPUP` 窗口，并把桌面宿主设置为 owner。收纳盒位于壁纸之上、普通应用窗口之下，不通过 `SetParent` 创建 WPF 子窗口。
 
 ## 2. 解决方案结构
 
@@ -20,7 +20,7 @@
 DesktopIconsStorage.sln
 src/
   Core/
-    Models/                     设置、收纳筐和文件项目模型
+    Models/                     设置、收纳盒和文件项目模型
     Services/                   文件移动、JSON 存储和文件夹监听
   Platform.Windows/
     Native/                     Win32、DWM、Shell COM 声明
@@ -53,7 +53,7 @@ docs/
 1. `App.OnStartup` 首先识别维护命令，例如卸载清理。
 2. `JsonStore.MigrateLegacyFiles` 将旧版 `DesktopOrganizer` 设置复制到新配置目录。
 3. `AppHost.Run` 获取单实例互斥锁并加载设置和布局。
-4. `BlockManager` 创建或加载收纳筐模型。
+4. `BlockManager` 创建或加载收纳盒模型。
 5. 每个模型对应一个 `BlockWindow` 和 `BlockView`。
 6. `DesktopEmbedService` 将窗口挂接到桌面层并维护 z 序。
 7. `BackdropService` 应用实时 DWM Acrylic 和深浅主题。
@@ -76,7 +76,7 @@ DesktopIconsStorage 的“收纳”是实际文件移动，不是数据库索引
 %APPDATA%\DesktopIconsStorage\settings.json
 %APPDATA%\DesktopIconsStorage\layout.json
 %APPDATA%\DesktopIconsStorage\startup.log
-%USERPROFILE%\DesktopIconsStorage\<收纳筐名称>\...
+%USERPROFILE%\DesktopIconsStorage\<收纳盒名称>\...
 ```
 
 旧版兼容目录：
@@ -106,7 +106,7 @@ DesktopIconsStorage 的“收纳”是实际文件移动，不是数据库索引
 
 ### 4.2 layout.json
 
-每个收纳筐保存 ID、名称、文件夹路径、坐标、宽高、折叠状态、名称显示覆盖以及手动图标顺序。坐标和尺寸按物理像素保存。
+每个收纳盒保存 ID、名称、文件夹路径、坐标、宽高、折叠状态、名称显示覆盖以及手动图标顺序。坐标和尺寸按物理像素保存。
 
 ### 4.3 文件冲突
 
@@ -131,13 +131,21 @@ DesktopIconsStorage 的“收纳”是实际文件移动，不是数据库索引
 ### 5.3 拖放和排序
 
 - 外部拖放使用 `CF_HDROP`。
-- 收纳筐内部拖放附加自定义数据格式，用于区分排序和真实文件移动。
+- 收纳盒内部拖放附加自定义数据格式，用于区分排序和真实文件移动。
 - 文件夹单元格中央区域表示移入子文件夹，操作前必须二次确认。
-- 图标顺序保存文件名而不是完整路径，避免收纳筐重命名后失效。
+- 图标顺序保存文件名而不是完整路径，避免收纳盒重命名后失效。
 
 ### 5.4 Shell 通知
 
 文件移动完成后使用正确的 `SHCNF_PATHW` 目录通知刷新 Explorer。禁止把字符串指针与 `SHCNF_IDLIST` 混用，否则可能触发不可捕获的 `AccessViolationException`。
+
+### 5.5 主题与品牌图标
+
+- `ThemeResourceManager` 把统一色板写入应用级动态资源，设置窗口、删除窗口和关闭确认窗口共同使用。
+- `Assets/app.ico` 是 EXE、安装器和开始菜单使用的通用主图标。
+- `Assets/app-light.ico` 与 `Assets/app-dark.ico` 用于运行时主题切换。
+- 托盘图标和 WPF 窗口图标会随应用主题立即更新；Windows Shell 缓存的 EXE 与快捷方式图标不会在运行时切换。
+- README 使用 `<picture>` 根据 GitHub 深浅主题切换 `docs/product-icon-light.png` 和 `docs/product-icon-dark.png`。
 
 ## 6. 本地构建
 
@@ -240,8 +248,11 @@ dotnet build DesktopIconsStorage.sln -c Release
 
 ### 9.4 手工功能检查
 
-- 创建、移动、缩放和折叠收纳筐。
+- 创建、移动、缩放和折叠收纳盒。
 - 深浅主题、透明度和毛玻璃切换。
+- 托盘、设置窗口和确认窗口图标随主题切换。
+- 关闭设置窗口时不勾选“记住我的选择”，选择隐藏到托盘后只确认一次。
+- 仅有一个收纳盒时，“移入其他收纳盒”选项保持禁用。
 - 单项及多项拖入/拖出。
 - 图标手动排序及重启持久化。
 - 移入子文件夹确认与非法嵌套拦截。

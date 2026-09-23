@@ -10,7 +10,7 @@ using DesktopIconsStorage.Platform.Services;
 
 namespace DesktopIconsStorage.App.Views;
 
-/// <summary>收纳块的视觉与交互：标题栏、图标网格、拖拽、折叠、重命名。</summary>
+/// <summary>收纳盒的视觉与交互：标题栏、图标网格、拖拽、折叠、重命名。</summary>
 public partial class BlockView : UserControl
 {
     private const string InternalReorderFormat = "DesktopIconsStorage.InternalReorderBlockId";
@@ -446,7 +446,7 @@ public partial class BlockView : UserControl
         rename.Click += (_, _) => BeginRename();
         var openFolder = new MenuItem { Header = "打开文件夹" };
         openFolder.Click += (_, _) => ShellFileService.Open(_window.Block.FolderPath);
-        var delete = new MenuItem { Header = "删除收纳块…" };
+        var delete = new MenuItem { Header = "删除收纳盒…" };
         delete.Click += (_, _) => _host.RequestDeleteBlock(_window);
 
         menu.Items.Add(showNames);
@@ -671,7 +671,7 @@ public partial class BlockView : UserControl
         e.Handled = true;
     }
 
-    /// <summary>判断拖放是否来自当前收纳筐，防止外部数据伪装成内部排序。</summary>
+    /// <summary>判断拖放是否来自当前收纳盒，防止外部数据伪装成内部排序。</summary>
     private bool IsInternalReorder(System.Windows.IDataObject data)
     {
         if (!data.GetDataPresent(InternalReorderFormat) || !data.GetDataPresent(DataFormats.FileDrop))

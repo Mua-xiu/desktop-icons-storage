@@ -49,6 +49,7 @@ public class AppHost : IDisposable
 
             Log("Run: loading settings");
             Settings = JsonStore.Load<AppSettings>(JsonStore.SettingsPath);
+            ThemeResourceManager.Apply(ThemePalette, AccentColor);
             AutostartService.RecordStorageRoot(Settings.StorageRoot);
             Blocks = new BlockManager(Settings);
             Blocks.Load();
@@ -157,7 +158,7 @@ public class AppHost : IDisposable
         var showNames = b.ShowIconNames ?? Settings.ShowIconNames;
         var cellW = Settings.IconSize + 34;
         var cellH = showNames ? Settings.IconSize + 60 : Settings.IconSize + 20;
-        // 收纳筐最小为完整 3×3 网格，避免缩小后图标区域无法使用。
+        // 收纳盒最小为完整 3×3 网格，避免缩小后图标区域无法使用。
         var minW = (3 * cellW + 16) * s;
         var minH = (40 + 3 * cellH + 12) * s;
 
@@ -206,7 +207,7 @@ public class AppHost : IDisposable
         w.RefreshViewAfterInternalChange();
     }
 
-    /// <summary>二次确认后，将收纳筐中的项目移动到指定子文件夹。</summary>
+    /// <summary>二次确认后，将收纳盒中的项目移动到指定子文件夹。</summary>
     public void MoveItemsIntoFolder(BlockWindow w, IEnumerable<string> paths, string targetFolder)
     {
         try
@@ -239,14 +240,14 @@ public class AppHost : IDisposable
         catch (Exception ex) { NotifyError($"重命名失败：{ex.Message}"); }
     }
 
-    /// <summary>保存收纳筐内的手动图标顺序。</summary>
+    /// <summary>保存收纳盒内的手动图标顺序。</summary>
     public void SetItemOrder(BlockWindow w, IEnumerable<string> fullPaths) =>
         Blocks.SetItemOrder(w.Block, fullPaths.Select(Path.GetFileName).OfType<string>());
 
     public void RequestDeleteBlock(BlockWindow w)
     {
         var others = Blocks.Blocks.Where(b => b != w.Block).ToList();
-        var dlg = new DeleteBlockDialog(w.Block, others);
+        var dlg = new DeleteBlockDialog(this, w.Block, others);
         if (dlg.ShowDialog() != true) return;
 
         try
@@ -275,7 +276,7 @@ public class AppHost : IDisposable
     public void RestoreAllWithConfirm()
     {
         var result = MessageBox.Show(
-            "将所有收纳块中的文件移回桌面？\n（块会保留，内容清空）",
+            "将所有收纳盒中的文件移回桌面？\n（块会保留，内容清空）",
             "一键全部还原", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (result != MessageBoxResult.Yes) return;
 
@@ -317,8 +318,13 @@ public class AppHost : IDisposable
         ApplyThemeToAll();
     }
 
-    public void ApplyThemeToAll() =>
-        InvokeUi(() => { foreach (var w in Windows.ToList()) w.ApplyBackdrop(); });
+    public void ApplyThemeToAll() => InvokeUi(() =>
+    {
+        ThemeResourceManager.Apply(ThemePalette, AccentColor);
+        foreach (var w in Windows.ToList()) w.ApplyBackdrop();
+        _tray?.ApplyThemeIcon(IsDarkTheme);
+        _settingsWindow?.ApplyThemeIcon();
+    });
 
     public void OpenSettings()
     {

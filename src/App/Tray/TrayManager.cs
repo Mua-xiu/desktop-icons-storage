@@ -10,15 +10,16 @@ public sealed class TrayManager : IDisposable
 {
     private readonly NotifyIcon _notifyIcon;
     private readonly ContextMenuStrip _menu;
+    private Icon? _themeIcon;
 
     public TrayManager(AppHost host)
     {
         _notifyIcon = new NotifyIcon
         {
             Text = "DesktopIconsStorage",
-            Icon = LoadAppIcon(),
             Visible = true
         };
+        ApplyThemeIcon(host.IsDarkTheme);
 
         _menu = new ContextMenuStrip
         {
@@ -38,7 +39,7 @@ public sealed class TrayManager : IDisposable
             return item;
         }
 
-        Add("新建收纳块", host.NewBlock);
+        Add("新建收纳盒", host.NewBlock);
         Add("折叠全部", () => host.SetAllCollapsed(true));
         Add("展开全部", () => host.SetAllCollapsed(false));
         _menu.Items.Add(new ToolStripSeparator());
@@ -87,14 +88,29 @@ public sealed class TrayManager : IDisposable
     [DllImport("user32.dll")]
     private static extern int SetWindowRgn(IntPtr hWnd, IntPtr hRgn, bool redraw);
 
-    /// <summary>从打包资源加载应用图标。</summary>
-    private static Icon LoadAppIcon()
+    /// <summary>主题变化时切换托盘图标；Shell/EXE 图标继续使用通用主图标。</summary>
+    public void ApplyThemeIcon(bool dark)
+    {
+        var nextIcon = LoadAppIcon(dark);
+        _notifyIcon.Icon = nextIcon;
+        _themeIcon?.Dispose();
+        _themeIcon = nextIcon;
+    }
+
+    /// <summary>从打包资源加载深浅主题图标。</summary>
+    private static Icon LoadAppIcon(bool dark)
     {
         try
         {
+            var name = dark ? "app-dark.ico" : "app-light.ico";
             var stream = System.Windows.Application.GetResourceStream(
-                new Uri("pack://application:,,,/Assets/app.ico", UriKind.Absolute))?.Stream;
-            if (stream != null) return new Icon(stream);
+                new Uri($"pack://application:,,,/Assets/{name}", UriKind.Absolute))?.Stream;
+            if (stream != null)
+            {
+                using (stream)
+                using (var loaded = new Icon(stream))
+                    return (Icon)loaded.Clone();
+            }
         }
         catch { /* 回退到程序图标 */ }
         return SystemIcons.Application;
@@ -107,5 +123,6 @@ public sealed class TrayManager : IDisposable
     {
         _notifyIcon.Visible = false;
         _notifyIcon.Dispose();
+        _themeIcon?.Dispose();
     }
 }

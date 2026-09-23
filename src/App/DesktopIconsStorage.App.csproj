@@ -23,6 +23,8 @@
 
   <ItemGroup>
     <Resource Include="Assets\app.ico" />
+    <Resource Include="Assets\app-light.ico" />
+    <Resource Include="Assets\app-dark.ico" />
     <ProjectReference Include="..\Core\DesktopIconsStorage.Core.csproj" />
     <ProjectReference Include="..\Platform.Windows\DesktopIconsStorage.Platform.Windows.csproj" />
   </ItemGroup>

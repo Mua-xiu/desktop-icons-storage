@@ -1,5 +1,8 @@
 using System.Windows;
+using System.Windows.Interop;
+using DesktopIconsStorage.App.Helpers;
 using DesktopIconsStorage.Core.Models;
+using DesktopIconsStorage.Platform.Services;
 
 namespace DesktopIconsStorage.App.Views;
 
@@ -7,17 +10,20 @@ public partial class DeleteBlockDialog : Window
 {
     public enum DeleteChoice { MoveToDesktop, MoveToOtherBlock, KeepFolderOnly }
 
+    private readonly AppHost _host;
     private readonly List<Block> _others;
 
     public DeleteChoice Choice { get; private set; } = DeleteChoice.MoveToDesktop;
     public Block? TargetBlock { get; private set; }
 
-    public DeleteBlockDialog(Block block, List<Block> otherBlocks)
+    public DeleteBlockDialog(AppHost host, Block block, List<Block> otherBoxes)
     {
         InitializeComponent();
-        _others = otherBlocks;
-        PromptText.Text = $"确定删除收纳块“{block.Name}”吗？块内文件如何处理：";
+        _host = host;
+        _others = otherBoxes;
+        PromptText.Text = $"确定删除收纳盒“{block.Name}”吗？请选择盒内文件的处理方式。";
         TargetCombo.ItemsSource = _others.Select(b => b.Name);
+        SourceInitialized += (_, _) => ApplyWindowTheme();
         if (_others.Count > 0)
         {
             TargetCombo.SelectedIndex = 0;
@@ -26,7 +32,21 @@ public partial class DeleteBlockDialog : Window
         {
             OptMove.IsEnabled = false;
             TargetCombo.IsEnabled = false;
+            NoOtherBoxText.Visibility = Visibility.Visible;
         }
+    }
+
+    /// <summary>同步标题栏深浅模式和运行时主题图标。</summary>
+    private void ApplyWindowTheme()
+    {
+        BackdropService.ApplyWindowTheme(new WindowInteropHelper(this).Handle, _host.IsDarkTheme);
+        try
+        {
+            var iconName = _host.IsDarkTheme ? "app-dark.ico" : "app-light.ico";
+            Icon = System.Windows.Media.Imaging.BitmapFrame.Create(
+                new Uri($"pack://application:,,,/Assets/{iconName}", UriKind.Absolute));
+        }
+        catch { /* 图标加载失败不影响删除流程 */ }
     }
 
     private void OnOk(object sender, RoutedEventArgs e)

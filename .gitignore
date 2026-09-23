@@ -26,6 +26,9 @@ Thumbs.db
 .zcodeignore
 docs/*
 !docs/DEVELOPMENT.md
+!docs/product-icon.png
+!docs/product-icon-light.png
+!docs/product-icon-dark.png
 PRD-桌面收纳.md
 产品设计文档.md
 技术选型与开发框架.md

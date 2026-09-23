@@ -1,23 +1,32 @@
-# DesktopIconsStorage
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/product-icon-dark.png">
+    <img src="docs/product-icon-light.png" width="180" alt="DesktopIconsStorage product icon">
+  </picture>
+  <h1>DesktopIconsStorage</h1>
+  <p><strong>让桌面图标收纳清晰、自然，并保持 Windows 原生体验。</strong></p>
+  <p>
+    <a href="https://www.microsoft.com/windows/"><img src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?logo=windows" alt="Windows 10 and 11"></a>
+    <a href="https://www.microsoft.com/windows/"><img src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?logo=windows" alt="Windows 10 and 11"></a>
+    <a href="https://dotnet.microsoft.com/"><img src="https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet" alt=".NET 8"></a>
+    <a href="https://github.com/Mua-xiu/desktop-icons-storage/releases"><img src="https://img.shields.io/github/v/release/Mua-xiu/desktop-icons-storage" alt="Latest release"></a>
+    <a href="https://github.com/Mua-xiu/desktop-icons-storage/actions/workflows/release.yml"><img src="https://github.com/Mua-xiu/desktop-icons-storage/actions/workflows/release.yml/badge.svg" alt="Build status"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/license-non--commercial-orange" alt="Non-commercial license"></a>
+  </p>
+</div>
 
-[![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?logo=windows)](https://www.microsoft.com/windows/)
-[![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
-[![Release](https://img.shields.io/github/v/release/Mua-xiu/desktop-icons-storage)](https://github.com/Mua-xiu/desktop-icons-storage/releases)
-[![Build](https://github.com/Mua-xiu/desktop-icons-storage/actions/workflows/release.yml/badge.svg)](https://github.com/Mua-xiu/desktop-icons-storage/actions/workflows/release.yml)
-[![License](https://img.shields.io/badge/license-non--commercial-orange)](LICENSE)
-
-DesktopIconsStorage 是一款原生 Windows 桌面图标收纳工具。它通过桌面层上的实时毛玻璃收纳筐整理文件、文件夹和快捷方式，同时保留 Windows 桌面的使用习惯。
+DesktopIconsStorage 是一款原生 Windows 桌面图标收纳工具。它通过桌面层上的实时毛玻璃收纳盒整理文件、文件夹和快捷方式，同时保留 Windows 桌面的使用习惯。
 
 > [!IMPORTANT]
 > 收纳操作会移动真实文件，而不是创建一份仅用于显示的副本。使用前请确保重要文件已有备份。
 
 ## 功能特性
 
-- 创建多个独立的桌面收纳筐，每个收纳筐对应一个真实文件夹
-- 收纳筐移动、八向缩放、双击折叠与展开
+- 创建多个独立的桌面收纳盒，每个收纳盒对应一个真实文件夹
+- 收纳盒移动、八向缩放、双击折叠与展开
 - 默认 5×3、最小 3×3 的 DPI 自适应图标网格
 - 文件和文件夹多选、框选、拖入、拖出、复制、剪切和粘贴
-- 收纳筐内手动排序，并持久化每个收纳筐的独立顺序
+- 收纳盒内手动排序，并持久化每个收纳盒的独立顺序
 - 将项目移入子文件夹前进行二次确认
 - Windows 11 风格深浅主题和实时 DWM Acrylic 毛玻璃
 - Windows Shell 右键菜单、回收站删除及系统图标提取
@@ -28,11 +37,11 @@ DesktopIconsStorage 是一款原生 Windows 桌面图标收纳工具。它通过
 
 请从 [GitHub Releases](https://github.com/Mua-xiu/desktop-icons-storage/releases) 下载正式版本。
 
-| 产物 | 适用场景 |
-| --- | --- |
+| 产物                                              | 适用场景                                                               |
+| ------------------------------------------------- | ---------------------------------------------------------------------- |
 | `DesktopIconsStorage-Setup-<version>-win-x64.exe` | 推荐。支持选择安装目录、开始菜单快捷方式、可选桌面快捷方式和标准卸载。 |
-| `DesktopIconsStorage-<version>-win-x64.exe` | 便携版。直接运行，不创建快捷方式和卸载信息。 |
-| `SHA256SUMS.txt` | 用于校验下载文件完整性。 |
+| `DesktopIconsStorage-<version>-win-x64.exe`       | 便携版。直接运行，不创建快捷方式和卸载信息。                           |
+| `SHA256SUMS.txt`                                  | 用于校验下载文件完整性。                                               |
 
 两种程序都内置 .NET 8 运行时，不需要安装 SDK、配置环境变量或安装驱动。
 
@@ -49,18 +58,18 @@ DesktopIconsStorage 是一款原生 Windows 桌面图标收纳工具。它通过
 
 ## 基本使用
 
-1. 启动后在系统托盘菜单中创建收纳筐。
-2. 将桌面文件、文件夹或快捷方式拖入收纳筐。
-3. 拖动标题栏移动收纳筐，拖动四边或四角调整尺寸。
-4. 在收纳筐内部拖动图标调整顺序；拖到文件夹中央时会请求确认后移入该文件夹。
-5. 双击标题栏折叠或展开；右键收纳筐可重命名、打开目录或删除收纳筐。
+1. 启动后在系统托盘菜单中创建收纳盒。
+2. 将桌面文件、文件夹或快捷方式拖入收纳盒。
+3. 拖动标题栏移动收纳盒，拖动四边或四角调整尺寸。
+4. 在收纳盒内部拖动图标调整顺序；拖到文件夹中央时会请求确认后移入该文件夹。
+5. 双击标题栏折叠或展开；右键收纳盒可重命名、打开目录或删除收纳盒。
 
 ## 数据位置
 
 新安装默认使用：
 
 - 配置和布局：`%APPDATA%\DesktopIconsStorage`
-- 收纳文件：`%USERPROFILE%\DesktopIconsStorage\<收纳筐名称>`
+- 收纳文件：`%USERPROFILE%\DesktopIconsStorage\<收纳盒名称>`
 
 从 0.1.x 升级时会自动读取旧的 `%APPDATA%\DesktopOrganizer` 配置；旧设置中已经指定的收纳目录保持不变，不会擅自移动用户文件。
 

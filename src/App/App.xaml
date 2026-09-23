@@ -4,7 +4,7 @@
              Startup="OnStartup" Exit="OnExit"
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
-        <!-- 全局主题笔刷：SettingsWindow 启动时按系统明暗填充（Win11 深/浅配色） -->
+        <!-- 全局主题笔刷：ThemeResourceManager 按系统或用户选择同步到所有窗口。 -->
         <SolidColorBrush x:Key="WindowBg" Color="#FF202020"/>
         <SolidColorBrush x:Key="NavBg" Color="#FF202020"/>
         <SolidColorBrush x:Key="CardBg" Color="#FF2B2B2B"/>

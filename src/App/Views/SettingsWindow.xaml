@@ -229,10 +229,20 @@
                 <StackPanel x:Name="PageGeneral" Visibility="Visible">
                     <TextBlock Text="常规" Style="{StaticResource GroupTitle}"/>
                     <Border Style="{StaticResource Card}">
-                        <Grid Style="{StaticResource Row}">
-                            <TextBlock Text="开机自启动" Style="{StaticResource RowLabel}"/>
-                            <CheckBox x:Name="AutoStartBox" Style="{StaticResource Switch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                        </Grid>
+                        <StackPanel>
+                            <Grid Style="{StaticResource Row}">
+                                <TextBlock Text="开机自启动" Style="{StaticResource RowLabel}"/>
+                                <CheckBox x:Name="AutoStartBox" Style="{StaticResource Switch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Style="{StaticResource Row}" Margin="0">
+                                <TextBlock Text="关闭设置窗口时" Style="{StaticResource RowLabel}"/>
+                                <ComboBox x:Name="CloseBehaviorCombo" Width="170" HorizontalAlignment="Right">
+                                    <ComboBoxItem Content="每次询问" Tag="ask"/>
+                                    <ComboBoxItem Content="隐藏到托盘" Tag="hide"/>
+                                    <ComboBoxItem Content="退出应用" Tag="exit"/>
+                                </ComboBox>
+                            </Grid>
+                        </StackPanel>
                     </Border>
                 </StackPanel>
 

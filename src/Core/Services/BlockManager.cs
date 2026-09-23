@@ -35,7 +35,7 @@ public class BlockManager
     public Block CreateBlock(double x, double y, string? name = null, double dpiScale = 1.0)
     {
         Directory.CreateDirectory(_settings.StorageRoot);
-        var blockName = UniqueBlockName(name ?? "新建收纳块");
+        var blockName = UniqueBlockName(name ?? "新建收纳盒");
         // 默认尺寸 = 5列×3行图标格（单元格尺寸与 BlockView 一致，物理像素随 DPI 缩放）
         var cellW = _settings.IconSize + 34; // 瓦片 + 左右间距
         var cellH = _settings.ShowIconNames ? _settings.IconSize + 60 : _settings.IconSize + 20;
@@ -162,7 +162,7 @@ public class BlockManager
     }
 
     /// <summary>
-    /// 把收纳筐根目录中的项目移动到其子文件夹；调用前应由界面完成二次确认。
+    /// 把收纳盒根目录中的项目移动到其子文件夹；调用前应由界面完成二次确认。
     /// 会阻止把文件夹移动到自身或自身的后代目录。
     /// </summary>
     public List<string> MoveIntoFolder(IEnumerable<string> paths, string targetFolder)

@@ -11,6 +11,8 @@ public partial class SettingsWindow : Window
 {
     private readonly AppHost _host;
     private bool _loaded;
+    private bool _allowCloseWithoutPrompt;
+    private bool _closePromptPending;
 
     private sealed class NavEntry
     {
@@ -60,6 +62,8 @@ public partial class SettingsWindow : Window
     /// </summary>
     private void OnClosingPrompt(object? sender, System.ComponentModel.CancelEventArgs e)
     {
+        if (_allowCloseWithoutPrompt) return;
+
         switch (_host.Settings.CloseBehavior)
         {
             case "hide":
@@ -71,25 +75,33 @@ public partial class SettingsWindow : Window
 
         // ask：取消本次关闭，延迟到关闭流程结束后再弹窗询问
         e.Cancel = true;
+        if (_closePromptPending) return;
+        _closePromptPending = true;
         Dispatcher.BeginInvoke(new Action(() =>
         {
-            var dlg = new CloseAskDialog { Owner = this };
-            if (dlg.ShowDialog() != true) return;
+            try
+            {
+                var dlg = new CloseAskDialog(_host.IsDarkTheme) { Owner = this };
+                if (dlg.ShowDialog() != true) return;
 
-            if (dlg.Remember)
-            {
-                _host.Settings.CloseBehavior =
-                    dlg.Choice == CloseAskDialog.CloseChoice.Exit ? "exit" : "hide";
-                _host.ApplySettings();
-            }
+                if (dlg.Remember)
+                {
+                    _host.Settings.CloseBehavior =
+                        dlg.Choice == CloseAskDialog.CloseChoice.Exit ? "exit" : "hide";
+                    _host.ApplySettings();
+                }
 
-            if (dlg.Choice == CloseAskDialog.CloseChoice.Exit)
-            {
-                _host.ExitApp();
+                // 即使不记住选择，本次关闭也必须直接通过，避免再次进入 ask 分支循环弹窗。
+                _allowCloseWithoutPrompt = true;
+                if (dlg.Choice == CloseAskDialog.CloseChoice.Exit)
+                    _host.ExitApp();
+                else
+                    Close();
             }
-            else
+            finally
             {
-                Close(); // 此处已不在 Closing 流程内，安全
+                if (!_allowCloseWithoutPrompt)
+                    _closePromptPending = false;
             }
         }));
     }
@@ -97,14 +109,15 @@ public partial class SettingsWindow : Window
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         ApplyThemeColors();
-        try
-        {
-            Icon = System.Windows.Media.Imaging.BitmapFrame.Create(
-                new Uri("pack://application:,,,/Assets/app.ico", UriKind.Absolute));
-        }
-        catch { /* 图标设置失败无碍 */ }
+        ApplyThemeIcon();
 
         AutoStartBox.IsChecked = _host.Settings.AutoStart;
+        CloseBehaviorCombo.SelectedIndex = _host.Settings.CloseBehavior switch
+        {
+            "hide" => 1,
+            "exit" => 2,
+            _ => 0
+        };
         BlurBox.IsChecked = _host.Settings.BlurEnabled;
         OpacitySlider.Value = _host.Settings.BackdropOpacity;
         OpacityText.Text = $"{(int)(_host.Settings.BackdropOpacity * 100)}%";
@@ -129,6 +142,15 @@ public partial class SettingsWindow : Window
         FadeOpacityText.Text = $"{(int)(_host.Settings.AutoFadeOpacity * 100)}%";
 
         AutoStartBox.Click += (_, _) => _host.SetAutoStart(AutoStartBox.IsChecked == true);
+        CloseBehaviorCombo.SelectionChanged += (_, _) =>
+        {
+            if (!_loaded) return;
+            if (CloseBehaviorCombo.SelectedItem is ComboBoxItem item && item.Tag is string behavior)
+            {
+                _host.Settings.CloseBehavior = behavior;
+                _host.ApplySettings();
+            }
+        };
         BlurBox.Click += (_, _) =>
         {
             _host.Settings.BlurEnabled = BlurBox.IsChecked == true;
@@ -194,24 +216,7 @@ public partial class SettingsWindow : Window
     /// <summary>按系统主题填充笔刷（Win11 设置应用配色：深墨灰底 / 浅浅灰底白卡片）。</summary>
     private void ApplyThemeColors()
     {
-        void Set(string key, Color color) =>
-            Application.Current.Resources[key] = new SolidColorBrush(color);
-
-        var palette = _host.ThemePalette;
-        Set("WindowBg", palette.WindowBackground);
-        Set("NavBg", palette.NavigationBackground);
-        Set("CardBg", palette.CardBackground);
-        Set("TextPrimary", palette.TextPrimary);
-        Set("TextSecondary", palette.TextSecondary);
-        Set("NavHeader", palette.NavigationHeader);
-        Set("ControlBg", palette.ControlBackground);
-        Set("ControlBgHover", palette.ControlHover);
-        Set("ControlBgPress", palette.ControlPressed);
-        Set("BorderSoft", palette.BorderSoft);
-        Set("TrackOff", palette.TrackOff);
-        Set("PopupBg", palette.PopupBackground);
-        // 主题色与系统 Accent 联动（开关/滑块/分区标题）
-        Application.Current.Resources["Accent"] = new SolidColorBrush(_host.AccentColor);
+        ThemeResourceManager.Apply(_host.ThemePalette, _host.AccentColor);
         ApplyNativeWindowTheme();
     }
 
@@ -220,6 +225,18 @@ public partial class SettingsWindow : Window
     {
         if (PresentationSource.FromVisual(this) == null) return;
         BackdropService.ApplyWindowTheme(new WindowInteropHelper(this).Handle, _host.IsDarkTheme);
+    }
+
+    /// <summary>设置窗口图标与当前应用主题同步。</summary>
+    public void ApplyThemeIcon()
+    {
+        try
+        {
+            var name = _host.IsDarkTheme ? "app-dark.ico" : "app-light.ico";
+            Icon = System.Windows.Media.Imaging.BitmapFrame.Create(
+                new Uri($"pack://application:,,,/Assets/{name}", UriKind.Absolute));
+        }
+        catch { /* 图标切换失败不影响设置窗口 */ }
     }
 
     private void OnClose(object sender, RoutedEventArgs e) => Close();

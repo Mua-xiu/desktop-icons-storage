@@ -4,12 +4,12 @@ using System.Runtime.CompilerServices;
 namespace DesktopIconsStorage.Core.Models;
 
 /// <summary>
-/// 收纳块：桌面上的一个区域，对应磁盘上的一个真实文件夹。
+/// 收纳盒：桌面上的一个区域，对应磁盘上的一个真实文件夹。
 /// 坐标/尺寸使用屏幕物理坐标（相对虚拟桌面原点）。
 /// </summary>
 public class Block : INotifyPropertyChanged
 {
-    private string _name = "新建收纳块";
+    private string _name = "新建收纳盒";
     private bool _collapsed;
     private double _x, _y, _width = 372, _height = 300;
 

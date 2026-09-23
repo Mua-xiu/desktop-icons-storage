@@ -10,7 +10,7 @@ using DesktopIconsStorage.Platform.Services;
 namespace DesktopIconsStorage.App;
 
 /// <summary>
-/// 一个收纳块窗口：以子窗口形式创建在桌面宿主（Progman/WorkerW）下，
+/// 一个收纳盒窗口：以子窗口形式创建在桌面宿主（Progman/WorkerW）下，
 /// 位于壁纸之上、应用窗口之下。Explorer 重启后由看门狗触发重建。
 /// </summary>
 public class BlockWindow : IDisposable
