@@ -92,7 +92,7 @@ dotnet build DesktopIconsStorage.sln
 生成自包含便携版和安装器：
 
 ```powershell
-.\scripts\build-release.ps1 -Version 0.2.0
+.\scripts\build-release.ps1 -Version 0.3.0
 ```
 
 安装器构建需要 Inno Setup 6；使用 `-SkipInstaller` 可以只生成便携版。推送 `v*` 标签时，GitHub Actions 会自动生成 Release 产物。
