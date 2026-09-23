@@ -91,6 +91,7 @@ if ($SkipInstaller) {
 
 $isccCandidates = @(
     (Get-Command "ISCC.exe" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -ErrorAction SilentlyContinue),
+    (Join-Path $env:LOCALAPPDATA "Programs\Inno Setup 6\ISCC.exe"),
     (Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) "Inno Setup 6\ISCC.exe"),
     (Join-Path ([Environment]::GetFolderPath('ProgramFiles')) "Inno Setup 6\ISCC.exe")
 ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and (Test-Path -LiteralPath $_) } |
