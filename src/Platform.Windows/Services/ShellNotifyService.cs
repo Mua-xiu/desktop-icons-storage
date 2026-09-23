@@ -1,8 +1,8 @@
 using System.IO;
 using System.Runtime.InteropServices;
-using DesktopOrganizer.Platform.Native;
+using DesktopIconsStorage.Platform.Native;
 
-namespace DesktopOrganizer.Platform.Services;
+namespace DesktopIconsStorage.Platform.Services;
 
 /// <summary>
 /// SHChangeNotify 主动通知：我们用 File.Move 移动文件时 Shell 不会感知，

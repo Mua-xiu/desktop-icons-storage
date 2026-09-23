@@ -2,7 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Media;
 
-namespace DesktopOrganizer.App.Helpers;
+namespace DesktopIconsStorage.App.Helpers;
 
 /// <summary>图标网格中的一个条目（绑定用）。</summary>
 public class IconGridItem : INotifyPropertyChanged

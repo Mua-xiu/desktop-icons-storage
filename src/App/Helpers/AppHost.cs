@@ -2,14 +2,14 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
-using DesktopOrganizer.App.Tray;
-using DesktopOrganizer.App.Views;
-using DesktopOrganizer.Core.Models;
-using DesktopOrganizer.Core.Services;
-using DesktopOrganizer.Platform.Services;
+using DesktopIconsStorage.App.Tray;
+using DesktopIconsStorage.App.Views;
+using DesktopIconsStorage.Core.Models;
+using DesktopIconsStorage.Core.Services;
+using DesktopIconsStorage.Platform.Services;
 using Microsoft.Win32;
 
-namespace DesktopOrganizer.App.Helpers;
+namespace DesktopIconsStorage.App.Helpers;
 
 /// <summary>应用中枢：设置、块管理、窗口集合、托盘、看门狗、主题。</summary>
 public class AppHost : IDisposable
@@ -41,13 +41,15 @@ public class AppHost : IDisposable
     {
         try
         {
+            JsonStore.MigrateLegacyFiles();
             Log("Run: acquiring single instance");
             _single = new SingleInstanceService();
             if (!_single.Acquire()) { Log("Run: second instance, exit"); return false; }
-            _single.SecondInstanceDetected += () => InvokeUi(() => _tray?.Balloon("桌面收纳已在运行中"));
+            _single.SecondInstanceDetected += () => InvokeUi(() => _tray?.Balloon("DesktopIconsStorage 已在运行中"));
 
             Log("Run: loading settings");
             Settings = JsonStore.Load<AppSettings>(JsonStore.SettingsPath);
+            AutostartService.RecordStorageRoot(Settings.StorageRoot);
             Blocks = new BlockManager(Settings);
             Blocks.Load();
             Log($"Run: blocks loaded, count={Blocks.Blocks.Count}");
@@ -301,6 +303,7 @@ public class AppHost : IDisposable
     {
         try
         {
+            AutostartService.RemoveLegacyRegistration();
             if (AutostartService.IsEnabled() != Settings.AutoStart)
                 AutostartService.SetEnabled(Settings.AutoStart);
         }
@@ -310,6 +313,7 @@ public class AppHost : IDisposable
     public void ApplySettings()
     {
         JsonStore.Save(JsonStore.SettingsPath, Settings);
+        try { AutostartService.RecordStorageRoot(Settings.StorageRoot); } catch { }
         ApplyThemeToAll();
     }
 
@@ -341,6 +345,49 @@ public class AppHost : IDisposable
     public void NotifyError(string message) => _tray?.Balloon(message);
 
     public void ExitApp() => Application.Current.Shutdown();
+
+    /// <summary>
+    /// 卸载器调用：把所有可见收纳项目安全移回桌面，再删除空收纳目录和配置。
+    /// 任一步失败都返回非零值，让卸载器保留数据并提示用户手动处理。
+    /// </summary>
+    public static int CleanupForUninstall()
+    {
+        try
+        {
+            JsonStore.MigrateLegacyFiles();
+            var settings = JsonStore.Load<AppSettings>(JsonStore.SettingsPath);
+            var manager = new BlockManager(settings);
+            manager.Load();
+            var blockFolders = manager.Blocks.Select(block => block.FolderPath).ToList();
+
+            manager.RestoreAllToDesktop();
+            ShellNotifyService.NotifyFolderChanged(manager.DesktopPath);
+
+            foreach (var folder in blockFolders)
+                DeleteDirectoryIfEmpty(folder);
+            DeleteDirectoryIfEmpty(settings.StorageRoot);
+            if (Directory.Exists(settings.StorageRoot) &&
+                Directory.EnumerateFileSystemEntries(settings.StorageRoot).Any())
+                throw new IOException($"收纳目录仍包含未处理文件：{settings.StorageRoot}");
+
+            AutostartService.RemoveAllRegistrations();
+            JsonStore.DeleteConfigurationForUninstall();
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            LogError("CleanupForUninstall", ex);
+            return 1;
+        }
+    }
+
+    /// <summary>只删除确认为空的目录，绝不递归清除未知或隐藏的用户文件。</summary>
+    private static void DeleteDirectoryIfEmpty(string path)
+    {
+        if (!Directory.Exists(path)) return;
+        if (!Directory.EnumerateFileSystemEntries(path).Any())
+            Directory.Delete(path, recursive: false);
+    }
 
     private static void InvokeUi(Action action)
     {

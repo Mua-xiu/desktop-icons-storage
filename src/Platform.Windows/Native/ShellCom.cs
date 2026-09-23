@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
-using static DesktopOrganizer.Platform.Native.NativeMethods;
+using static DesktopIconsStorage.Platform.Native.NativeMethods;
 
-namespace DesktopOrganizer.Platform.Native;
+namespace DesktopIconsStorage.Platform.Native;
 
 // ---- Shell COM 接口（按 vtable 顺序完整声明，缺失方法会导致调用错位）----
 

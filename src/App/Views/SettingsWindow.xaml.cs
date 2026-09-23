@@ -2,10 +2,10 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
-using DesktopOrganizer.App.Helpers;
-using DesktopOrganizer.Platform.Services;
+using DesktopIconsStorage.App.Helpers;
+using DesktopIconsStorage.Platform.Services;
 
-namespace DesktopOrganizer.App.Views;
+namespace DesktopIconsStorage.App.Views;
 
 public partial class SettingsWindow : Window
 {

@@ -1,4 +1,4 @@
-namespace DesktopOrganizer.Core.Models;
+namespace DesktopIconsStorage.Core.Models;
 
 /// <summary>块内的一个条目（文件或文件夹）。</summary>
 public class IconItem

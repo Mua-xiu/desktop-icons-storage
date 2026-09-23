@@ -10,12 +10,12 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
-$projectPath = Join-Path $repoRoot "src\App\DesktopOrganizer.App.csproj"
+$projectPath = Join-Path $repoRoot "src\App\DesktopIconsStorage.App.csproj"
 $artifactsRoot = [System.IO.Path]::GetFullPath((Join-Path $repoRoot "artifacts"))
 $publishDir = [System.IO.Path]::GetFullPath((Join-Path $artifactsRoot "publish\$Runtime"))
 $releaseDir = [System.IO.Path]::GetFullPath((Join-Path $artifactsRoot "release"))
 $installerOutputDir = [System.IO.Path]::GetFullPath((Join-Path $artifactsRoot "installer"))
-$installerScript = Join-Path $repoRoot "build\installer\DesktopOrganizer.iss"
+$installerScript = Join-Path $repoRoot "build\installer\DesktopIconsStorage.iss"
 
 if ([string]::IsNullOrWhiteSpace($Version)) {
     [xml]$projectXml = Get-Content -LiteralPath $projectPath -Raw
@@ -45,7 +45,7 @@ foreach ($directory in @($publishDir, $releaseDir, $installerOutputDir)) {
     New-Item -ItemType Directory -Path $directory -Force | Out-Null
 }
 
-Write-Host "发布 DesktopOrganizer $Version ($Runtime)..."
+Write-Host "发布 DesktopIconsStorage $Version ($Runtime)..."
 & dotnet publish $projectPath `
     --configuration Release `
     --runtime $Runtime `
@@ -61,12 +61,12 @@ if ($LASTEXITCODE -ne 0) {
     throw "dotnet publish 失败，退出码：$LASTEXITCODE"
 }
 
-$publishedExe = Join-Path $publishDir "DesktopOrganizer.exe"
+$publishedExe = Join-Path $publishDir "DesktopIconsStorage.exe"
 if (-not (Test-Path -LiteralPath $publishedExe)) {
-    throw "发布结果缺少 DesktopOrganizer.exe"
+    throw "发布结果缺少 DesktopIconsStorage.exe"
 }
 
-$portableExe = Join-Path $releaseDir "DesktopOrganizer-$Version-$Runtime.exe"
+$portableExe = Join-Path $releaseDir "DesktopIconsStorage-$Version-$Runtime.exe"
 Copy-Item -LiteralPath $publishedExe -Destination $portableExe -Force
 Write-Host "便携版：$portableExe"
 
@@ -107,7 +107,7 @@ if ($LASTEXITCODE -ne 0) {
     throw "Inno Setup 编译失败，退出码：$LASTEXITCODE"
 }
 
-$installerExe = Join-Path $installerOutputDir "DesktopOrganizer-Setup-$Version-$Runtime.exe"
+$installerExe = Join-Path $installerOutputDir "DesktopIconsStorage-Setup-$Version-$Runtime.exe"
 if (-not (Test-Path -LiteralPath $installerExe)) {
     throw "安装包未生成：$installerExe"
 }

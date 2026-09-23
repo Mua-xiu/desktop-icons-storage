@@ -1,10 +1,10 @@
-namespace DesktopOrganizer.Platform.Services;
+namespace DesktopIconsStorage.Platform.Services;
 
 /// <summary>单实例：命名 Mutex + 命名事件（二次启动时唤醒已有实例）。</summary>
 public sealed class SingleInstanceService : IDisposable
 {
-    private const string MutexName = @"Local\DesktopOrganizer.SingleInstance";
-    private const string WakeupEventName = @"Local\DesktopOrganizer.Wakeup";
+    private const string MutexName = @"Local\DesktopIconsStorage.SingleInstance";
+    private const string WakeupEventName = @"Local\DesktopIconsStorage.Wakeup";
 
     private Mutex? _mutex;
     private EventWaitHandle? _wakeup;

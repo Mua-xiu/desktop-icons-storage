@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace DesktopOrganizer.Platform.Native;
+namespace DesktopIconsStorage.Platform.Native;
 
 internal static class NativeMethods
 {

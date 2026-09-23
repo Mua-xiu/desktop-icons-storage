@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace DesktopOrganizer.Core.Models;
+namespace DesktopIconsStorage.Core.Models;
 
 /// <summary>
 /// 收纳块：桌面上的一个区域，对应磁盘上的一个真实文件夹。

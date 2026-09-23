@@ -1,9 +1,9 @@
 using System.Windows;
 using System.Windows.Media.Imaging;
-using DesktopOrganizer.Platform.Native;
+using DesktopIconsStorage.Platform.Native;
 using Microsoft.Win32;
 
-namespace DesktopOrganizer.Platform.Services;
+namespace DesktopIconsStorage.Platform.Services;
 
 /// <summary>
 /// 自绘毛玻璃的壁纸取样：读取当前壁纸图，按块所在屏幕区域做"填充"模式裁剪。

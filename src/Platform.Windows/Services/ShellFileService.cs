@@ -1,6 +1,6 @@
-using DesktopOrganizer.Platform.Native;
+using DesktopIconsStorage.Platform.Native;
 
-namespace DesktopOrganizer.Platform.Services;
+namespace DesktopIconsStorage.Platform.Services;
 
 /// <summary>Shell 文件操作：打开、回收站删除。</summary>
 public static class ShellFileService

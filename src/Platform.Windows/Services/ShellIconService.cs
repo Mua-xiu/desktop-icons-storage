@@ -2,9 +2,9 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
-using DesktopOrganizer.Platform.Native;
+using DesktopIconsStorage.Platform.Native;
 
-namespace DesktopOrganizer.Platform.Services;
+namespace DesktopIconsStorage.Platform.Services;
 
 /// <summary>Shell 图标提取（IShellItemImageFactory，高质量，支持缩略图缓存）。</summary>
 public static class ShellIconService

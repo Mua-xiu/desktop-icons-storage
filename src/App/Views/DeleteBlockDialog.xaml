@@ -1,4 +1,4 @@
-<Window x:Class="DesktopOrganizer.App.Views.DeleteBlockDialog"
+<Window x:Class="DesktopIconsStorage.App.Views.DeleteBlockDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="删除收纳块" Width="430" SizeToContent="Height"

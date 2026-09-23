@@ -1,6 +1,6 @@
-using DesktopOrganizer.Platform.Native;
+using DesktopIconsStorage.Platform.Native;
 
-namespace DesktopOrganizer.Platform.Services;
+namespace DesktopIconsStorage.Platform.Services;
 
 /// <summary>
 /// 桌面层嵌入：把块窗口挂到"桌面图标视图"所在的宿主窗口下，

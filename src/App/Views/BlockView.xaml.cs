@@ -5,15 +5,15 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-using DesktopOrganizer.App.Helpers;
-using DesktopOrganizer.Platform.Services;
+using DesktopIconsStorage.App.Helpers;
+using DesktopIconsStorage.Platform.Services;
 
-namespace DesktopOrganizer.App.Views;
+namespace DesktopIconsStorage.App.Views;
 
 /// <summary>收纳块的视觉与交互：标题栏、图标网格、拖拽、折叠、重命名。</summary>
 public partial class BlockView : UserControl
 {
-    private const string InternalReorderFormat = "DesktopOrganizer.InternalReorderBlockId";
+    private const string InternalReorderFormat = "DesktopIconsStorage.InternalReorderBlockId";
 
     private readonly BlockWindow _window;
     private readonly AppHost _host;

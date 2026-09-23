@@ -1,8 +1,8 @@
 using System.Runtime.InteropServices;
 using System.Windows.Media;
-using DesktopOrganizer.Platform.Native;
+using DesktopIconsStorage.Platform.Native;
 
-namespace DesktopOrganizer.Platform.Services;
+namespace DesktopIconsStorage.Platform.Services;
 
 /// <summary>
 /// 毛玻璃背景。降级链：

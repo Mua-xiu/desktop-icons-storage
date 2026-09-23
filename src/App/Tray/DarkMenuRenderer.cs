@@ -2,7 +2,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using GdiColor = System.Drawing.Color;
 
-namespace DesktopOrganizer.App.Tray;
+namespace DesktopIconsStorage.App.Tray;
 
 /// <summary>托盘右键菜单渲染：深/浅两套 Win11 风格配色，圆角与留白由 TrayManager 配合处理。</summary>
 public class ThemedMenuRenderer : ToolStripProfessionalRenderer

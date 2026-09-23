@@ -10,17 +10,21 @@
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
-    <AssemblyName>DesktopOrganizer</AssemblyName>
-    <RootNamespace>DesktopOrganizer.App</RootNamespace>
-    <Version>0.1.0</Version>
-    <Product>桌面收纳 DesktopOrganizer</Product>
+    <AssemblyName>DesktopIconsStorage</AssemblyName>
+    <RootNamespace>DesktopIconsStorage.App</RootNamespace>
+    <Version>0.2.0</Version>
+    <Product>DesktopIconsStorage</Product>
+    <Authors>Mua-xiu</Authors>
+    <Company>Mua-xiu</Company>
+    <Copyright>Copyright © 2026 Mua-xiu</Copyright>
+    <RepositoryUrl>https://github.com/Mua-xiu/desktop-icons-storage</RepositoryUrl>
     <Description>纯粹简约的 Windows 桌面图标整理工具</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <Resource Include="Assets\app.ico" />
-    <ProjectReference Include="..\Core\DesktopOrganizer.Core.csproj" />
-    <ProjectReference Include="..\Platform.Windows\DesktopOrganizer.Platform.Windows.csproj" />
+    <ProjectReference Include="..\Core\DesktopIconsStorage.Core.csproj" />
+    <ProjectReference Include="..\Platform.Windows\DesktopIconsStorage.Platform.Windows.csproj" />
   </ItemGroup>
 
 </Project>

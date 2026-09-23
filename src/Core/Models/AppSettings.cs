@@ -1,4 +1,4 @@
-namespace DesktopOrganizer.Core.Models;
+namespace DesktopIconsStorage.Core.Models;
 
 /// <summary>应用设置，持久化到 settings.json。</summary>
 public class AppSettings
@@ -9,7 +9,7 @@ public class AppSettings
     /// <summary>主题模式：system / light / dark。</summary>
     public string ThemeMode { get; set; } = "system";
 
-    /// <summary>收纳根目录，默认 %USERPROFILE%\DesktopBlocks。</summary>
+    /// <summary>收纳根目录，默认 %USERPROFILE%\DesktopIconsStorage。</summary>
     public string StorageRoot { get; set; } = DefaultStorageRoot();
 
     /// <summary>块背景不透明度 0.2 - 1.0（作用于毛玻璃 tint）。</summary>
@@ -40,5 +40,5 @@ public class AppSettings
     public double AutoFadeOpacity { get; set; } = 0.15;
 
     public static string DefaultStorageRoot() =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "DesktopBlocks");
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "DesktopIconsStorage");
 }

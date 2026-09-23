@@ -1,7 +1,7 @@
 using System.Windows.Media;
 using Microsoft.Win32;
 
-namespace DesktopOrganizer.Platform.Services;
+namespace DesktopIconsStorage.Platform.Services;
 
 /// <summary>Win11 设置应用风格的中性色板，供设置窗口与桌面收纳盒共同使用。</summary>
 public readonly record struct ThemePalette(

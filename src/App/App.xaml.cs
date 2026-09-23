@@ -1,7 +1,7 @@
 using System.Windows;
-using DesktopOrganizer.App.Helpers;
+using DesktopIconsStorage.App.Helpers;
 
-namespace DesktopOrganizer.App;
+namespace DesktopIconsStorage.App;
 
 public partial class App : Application
 {
@@ -9,6 +9,12 @@ public partial class App : Application
 
     private void OnStartup(object sender, StartupEventArgs e)
     {
+        if (e.Args.Contains("--uninstall-cleanup", StringComparer.OrdinalIgnoreCase))
+        {
+            Shutdown(AppHost.CleanupForUninstall());
+            return;
+        }
+
         _host = new AppHost();
         if (!_host.Run())
         {

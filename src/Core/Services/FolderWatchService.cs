@@ -1,4 +1,4 @@
-namespace DesktopOrganizer.Core.Services;
+namespace DesktopIconsStorage.Core.Services;
 
 /// <summary>监听块文件夹的外部变更，防抖后触发刷新。</summary>
 public sealed class FolderWatchService : IDisposable

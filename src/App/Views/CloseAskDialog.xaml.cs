@@ -1,6 +1,6 @@
 using System.Windows;
 
-namespace DesktopOrganizer.App.Views;
+namespace DesktopIconsStorage.App.Views;
 
 public partial class CloseAskDialog : Window
 {

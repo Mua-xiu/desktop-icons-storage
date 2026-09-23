@@ -1,15 +1,15 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{74186DBB-313F-4373-A8BD-9EABE075FA90}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesktopOrganizer.Core", "src\Core\DesktopOrganizer.Core.csproj", "{F1B6625A-23EB-41F1-92AB-9F54C04FCDCB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesktopIconsStorage.Core", "src\Core\DesktopIconsStorage.Core.csproj", "{F1B6625A-23EB-41F1-92AB-9F54C04FCDCB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesktopOrganizer.Platform.Windows", "src\Platform.Windows\DesktopOrganizer.Platform.Windows.csproj", "{96010F01-3C8D-445F-9A68-C8D1E87F74AE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesktopIconsStorage.Platform.Windows", "src\Platform.Windows\DesktopIconsStorage.Platform.Windows.csproj", "{96010F01-3C8D-445F-9A68-C8D1E87F74AE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesktopOrganizer.App", "src\App\DesktopOrganizer.App.csproj", "{6752348C-1CF0-42B6-A71F-C68864208698}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesktopIconsStorage.App", "src\App\DesktopIconsStorage.App.csproj", "{6752348C-1CF0-42B6-A71F-C68864208698}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

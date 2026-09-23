@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "版本号，例如 0.1.0"
+        description: "版本号，例如 0.2.0"
         required: true
-        default: "0.1.0"
+        default: "0.2.0"
 
 permissions:
   contents: write
@@ -20,10 +20,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup .NET 8
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: "8.0.x"
 
@@ -47,9 +47,9 @@ jobs:
         run: .\scripts\build-release.ps1 -Version "${{ steps.version.outputs.version }}"
 
       - name: Upload workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: DesktopOrganizer-${{ steps.version.outputs.version }}-win-x64
+          name: DesktopIconsStorage-${{ steps.version.outputs.version }}-win-x64
           path: |
             artifacts/installer/*.exe
             artifacts/release/*.exe
@@ -65,8 +65,8 @@ jobs:
           $tag = "${{ github.ref_name }}"
           $version = "${{ steps.version.outputs.version }}"
           $files = @(
-            "artifacts/installer/DesktopOrganizer-Setup-$version-win-x64.exe",
-            "artifacts/release/DesktopOrganizer-$version-win-x64.exe",
+            "artifacts/installer/DesktopIconsStorage-Setup-$version-win-x64.exe",
+            "artifacts/release/DesktopIconsStorage-$version-win-x64.exe",
             "artifacts/release/SHA256SUMS.txt"
           )
-          gh release create $tag @files --verify-tag --generate-notes --title "DesktopOrganizer $tag"
+          gh release create $tag @files --verify-tag --generate-notes --title "DesktopIconsStorage $tag"

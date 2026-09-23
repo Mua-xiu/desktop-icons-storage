@@ -1,7 +1,7 @@
 using System.Windows;
-using DesktopOrganizer.Core.Models;
+using DesktopIconsStorage.Core.Models;
 
-namespace DesktopOrganizer.App.Views;
+namespace DesktopIconsStorage.App.Views;
 
 public partial class DeleteBlockDialog : Window
 {

@@ -6,11 +6,11 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <RootNamespace>DesktopOrganizer.Platform</RootNamespace>
+    <RootNamespace>DesktopIconsStorage.Platform</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Core\DesktopOrganizer.Core.csproj" />
+    <ProjectReference Include="..\Core\DesktopIconsStorage.Core.csproj" />
   </ItemGroup>
 
 </Project>

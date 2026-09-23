@@ -1,6 +1,6 @@
-using DesktopOrganizer.Platform.Native;
+using DesktopIconsStorage.Platform.Native;
 
-namespace DesktopOrganizer.Platform.Services;
+namespace DesktopIconsStorage.Platform.Services;
 
 /// <summary>DPI 缩放辅助（进程为 PerMonitorV2，坐标一律使用物理像素）。</summary>
 public static class DpiHelper

@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
-using DesktopOrganizer.Platform.Native;
+using DesktopIconsStorage.Platform.Native;
 
-namespace DesktopOrganizer.Platform.Services;
+namespace DesktopIconsStorage.Platform.Services;
 
 /// <summary>
 /// 完整系统右键菜单托管（IContextMenu/2/3），与资源管理器一致，含第三方外壳扩展。

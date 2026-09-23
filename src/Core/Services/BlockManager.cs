@@ -1,6 +1,6 @@
-using DesktopOrganizer.Core.Models;
+using DesktopIconsStorage.Core.Models;
 
-namespace DesktopOrganizer.Core.Services;
+namespace DesktopIconsStorage.Core.Services;
 
 /// <summary>
 /// 块的生命周期与文件移动（收纳 = 真实移动，不是复制也不是删除）。

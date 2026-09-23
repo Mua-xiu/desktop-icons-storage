@@ -24,7 +24,8 @@ Thumbs.db
 
 # 本地协作工具配置及设计过程资料
 .zcodeignore
-docs/
+docs/*
+!docs/DEVELOPMENT.md
 PRD-桌面收纳.md
 产品设计文档.md
 技术选型与开发框架.md

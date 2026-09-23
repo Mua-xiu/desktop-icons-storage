@@ -1,9 +1,9 @@
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using DesktopOrganizer.App.Helpers;
+using DesktopIconsStorage.App.Helpers;
 
-namespace DesktopOrganizer.App.Tray;
+namespace DesktopIconsStorage.App.Tray;
 
 /// <summary>系统托盘（WinForms NotifyIcon）：应用图标 + 主题化圆角菜单。</summary>
 public sealed class TrayManager : IDisposable
@@ -15,7 +15,7 @@ public sealed class TrayManager : IDisposable
     {
         _notifyIcon = new NotifyIcon
         {
-            Text = "桌面收纳",
+            Text = "DesktopIconsStorage",
             Icon = LoadAppIcon(),
             Visible = true
         };
@@ -101,7 +101,7 @@ public sealed class TrayManager : IDisposable
     }
 
     public void Balloon(string text) =>
-        _notifyIcon.ShowBalloonTip(2500, "桌面收纳", text, ToolTipIcon.Info);
+        _notifyIcon.ShowBalloonTip(2500, "DesktopIconsStorage", text, ToolTipIcon.Info);
 
     public void Dispose()
     {

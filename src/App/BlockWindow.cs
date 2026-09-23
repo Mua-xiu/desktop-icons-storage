@@ -1,13 +1,13 @@
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
-using DesktopOrganizer.App.Helpers;
-using DesktopOrganizer.App.Views;
-using DesktopOrganizer.Core.Models;
-using DesktopOrganizer.Core.Services;
-using DesktopOrganizer.Platform.Services;
+using DesktopIconsStorage.App.Helpers;
+using DesktopIconsStorage.App.Views;
+using DesktopIconsStorage.Core.Models;
+using DesktopIconsStorage.Core.Services;
+using DesktopIconsStorage.Platform.Services;
 
-namespace DesktopOrganizer.App;
+namespace DesktopIconsStorage.App;
 
 /// <summary>
 /// 一个收纳块窗口：以子窗口形式创建在桌面宿主（Progman/WorkerW）下，
@@ -57,7 +57,7 @@ public class BlockWindow : IDisposable
         // NoFences 同款模型：顶层 WS_POPUP 窗口 + owner = Progman。
         // owner 使窗口始终位于桌面之上、其他应用窗口之下；NOACTIVATE 防止点击抢前台；
         // 顶层窗口可以使用 DWM 毛玻璃（子窗口不行，这是放弃 SetParent 方案的原因）。
-        var parms = new HwndSourceParameters("DesktopOrganizer.Block")
+        var parms = new HwndSourceParameters("DesktopIconsStorage.Block")
         {
             ParentWindow = _hostHwnd, // 顶层窗口创建时此参数为 owner
             WindowStyle = WS_POPUP | WS_VISIBLE,
@@ -96,9 +96,9 @@ public class BlockWindow : IDisposable
         var effectiveOpacity = EffectiveBackdropOpacity();
         var alpha = (byte)Math.Clamp((int)(effectiveOpacity * 255), 40, 255);
         var palette = _host.ThemePalette;
-        var kind = DesktopOrganizer.Platform.Services.BackdropService.Apply(
+        var kind = DesktopIconsStorage.Platform.Services.BackdropService.Apply(
             Hwnd, palette.WindowBackground, alpha, _host.Settings.BlurEnabled, _host.IsDarkTheme);
-        var liveAcrylic = kind == DesktopOrganizer.Platform.Services.BackdropService.BackdropKind.Acrylic;
+        var liveAcrylic = kind == DesktopIconsStorage.Platform.Services.BackdropService.BackdropKind.Acrylic;
 
         // 2026-09-23：停用壁纸截图模拟，透明与模糊全部交给 DWM 实时合成。
         _view.SetFrostImage(null);
