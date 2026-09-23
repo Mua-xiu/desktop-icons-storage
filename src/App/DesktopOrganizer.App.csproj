@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <AssemblyName>DesktopOrganizer</AssemblyName>
+    <RootNamespace>DesktopOrganizer.App</RootNamespace>
+    <Version>0.1.0</Version>
+    <Product>桌面收纳 DesktopOrganizer</Product>
+    <Description>纯粹简约的 Windows 桌面图标整理工具</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\app.ico" />
+    <ProjectReference Include="..\Core\DesktopOrganizer.Core.csproj" />
+    <ProjectReference Include="..\Platform.Windows\DesktopOrganizer.Platform.Windows.csproj" />
+  </ItemGroup>
+
+</Project>

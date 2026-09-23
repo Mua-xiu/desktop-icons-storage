@@ -1,0 +1,30 @@
+# .NET / Visual Studio 构建产物
+**/bin/
+**/obj/
+.vs/
+artifacts/
+publish/
+TestResults/
+*.user
+*.suo
+*.cache
+
+# 本地运行数据与日志
+DesktopBlocks/
+settings.json
+layout.json
+*.log
+*.tmp
+
+# 操作系统与编辑器文件
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# 本地协作工具配置及设计过程资料
+.zcodeignore
+docs/
+PRD-桌面收纳.md
+产品设计文档.md
+技术选型与开发框架.md

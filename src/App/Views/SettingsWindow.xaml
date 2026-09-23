@@ -1,0 +1,336 @@
+<Window x:Class="DesktopOrganizer.App.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="桌面收纳 · 设置" Width="780" Height="600"
+        WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
+        Background="{DynamicResource WindowBg}" Foreground="{DynamicResource TextPrimary}"
+        FontFamily="Segoe UI Variable Text, Microsoft YaHei UI" FontSize="13">
+    <Window.Resources>
+        <!-- 主题笔刷在 App.xaml（根元素属性先于 Resources 解析，必须放应用级） -->
+
+        <!-- 左侧导航项 -->
+        <Style x:Key="NavItem" TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="10,10"/>
+            <Setter Property="Margin" Value="6,1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Bd" CornerRadius="6" Padding="{TemplateBinding Padding}"
+                                Background="Transparent">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding Icon}" Width="22" FontSize="14"
+                                           VerticalAlignment="Center" Foreground="{DynamicResource TextSecondary}"/>
+                                <TextBlock Text="{Binding Title}" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource TextPrimary}"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ControlBg}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ControlBgHover}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 分区蓝色小标题 -->
+        <Style x:Key="GroupTitle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource Accent}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+
+        <!-- Win11 式设置卡片 -->
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource CardBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSoft}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="16,12"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+
+        <!-- 行容器与标签 -->
+        <Style x:Key="Row" TargetType="Grid">
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+        <Style x:Key="RowLabel" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        </Style>
+
+        <!-- iOS 风格开关 -->
+        <Style x:Key="Switch" TargetType="CheckBox">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Grid Width="36" Height="20">
+                            <Border x:Name="Track" CornerRadius="10" Background="{DynamicResource TrackOff}"/>
+                            <Border x:Name="Knob" CornerRadius="8" Width="16" Height="16"
+                                    Background="White" HorizontalAlignment="Left" Margin="2,0"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Track" Property="Background" Value="{StaticResource Accent}"/>
+                                <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 下拉框（文字色随主题，修复选中框文字看不清问题） -->
+        <Style TargetType="ComboBox">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton x:Name="ToggleButton" Focusable="False"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                          ClickMode="Press">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border x:Name="Bd" CornerRadius="4" Background="{DynamicResource ControlBg}"
+                                                BorderBrush="{DynamicResource BorderSoft}" BorderThickness="1" Padding="10,5">
+                                            <Grid TextElement.Foreground="{DynamicResource TextPrimary}">
+                                                <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <TextBlock Text="▾" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ControlBgHover}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                                <ContentPresenter Content="{TemplateBinding SelectionBoxItem}"
+                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                  TextElement.Foreground="{DynamicResource TextPrimary}"/>
+                            </ToggleButton>
+                            <Popup x:Name="Popup" Placement="Bottom" AllowsTransparency="True" Focusable="False"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}" PopupAnimation="Slide">
+                                <Border Background="{DynamicResource PopupBg}" BorderBrush="{DynamicResource BorderSoft}" BorderThickness="1"
+                                        CornerRadius="4" Padding="2" MinWidth="{TemplateBinding ActualWidth}"
+                                        MaxHeight="220" Margin="0,2,0,0">
+                                    <ScrollViewer CanContentScroll="True">
+                                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="Bd" CornerRadius="3" Padding="{TemplateBinding Padding}" Background="Transparent">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ControlBgHover}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 滑块：细轨 + 主题色圆点 -->
+        <Style TargetType="Slider">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid Height="22">
+                            <Border Height="3" CornerRadius="1.5" Background="{DynamicResource TrackOff}" VerticalAlignment="Center"/>
+                            <Track x:Name="PART_Track">
+                                <Track.Thumb>
+                                    <Thumb Width="12" Height="12">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border CornerRadius="6" Background="{StaticResource Accent}"/>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 按钮 -->
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource ControlBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="14,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="4" Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ControlBgHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ControlBgPress}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="172"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- 左侧导航栏 -->
+        <Border Grid.Column="0" Background="{DynamicResource NavBg}">
+            <StackPanel Margin="0,10,0,0">
+                <TextBlock Text="偏好设置" FontSize="11" Foreground="{DynamicResource NavHeader}" Margin="14,0,0,8"/>
+                <ListBox x:Name="NavList" Background="Transparent" BorderThickness="0"
+                         ItemContainerStyle="{StaticResource NavItem}" SelectedIndex="0"
+                         FocusVisualStyle="{x:Null}">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel/>
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                </ListBox>
+            </StackPanel>
+        </Border>
+
+        <!-- 右侧内容区 -->
+        <Border Grid.Column="1" Padding="26,20">
+            <Grid>
+                <!-- 常规 -->
+                <StackPanel x:Name="PageGeneral" Visibility="Visible">
+                    <TextBlock Text="常规" Style="{StaticResource GroupTitle}"/>
+                    <Border Style="{StaticResource Card}">
+                        <Grid Style="{StaticResource Row}">
+                            <TextBlock Text="开机自启动" Style="{StaticResource RowLabel}"/>
+                            <CheckBox x:Name="AutoStartBox" Style="{StaticResource Switch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <!-- 外观 -->
+                <StackPanel x:Name="PageAppearance" Visibility="Collapsed">
+                    <TextBlock Text="外观" Style="{StaticResource GroupTitle}"/>
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <Grid Style="{StaticResource Row}">
+                                <TextBlock Text="主题" Style="{StaticResource RowLabel}"/>
+                                <ComboBox x:Name="ThemeCombo" Width="170" HorizontalAlignment="Right">
+                                    <ComboBoxItem Content="跟随系统" Tag="system"/>
+                                    <ComboBoxItem Content="浅色" Tag="light"/>
+                                    <ComboBoxItem Content="深色" Tag="dark"/>
+                                </ComboBox>
+                            </Grid>
+                            <Grid Style="{StaticResource Row}">
+                                <TextBlock Text="启用毛玻璃效果" Style="{StaticResource RowLabel}"/>
+                                <CheckBox x:Name="BlurBox" Style="{StaticResource Switch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Style="{StaticResource Row}" Margin="0">
+                                <TextBlock Text="背景不透明度" Style="{StaticResource RowLabel}"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <Slider x:Name="OpacitySlider" Width="190" Minimum="0.3" Maximum="1.0" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="OpacityText" Width="42" TextAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondary}"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- 图标 -->
+                <StackPanel x:Name="PageIcons" Visibility="Collapsed">
+                    <TextBlock Text="图标" Style="{StaticResource GroupTitle}"/>
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <Grid Style="{StaticResource Row}">
+                                <TextBlock Text="图标大小" Style="{StaticResource RowLabel}"/>
+                                <ComboBox x:Name="IconSizeCombo" Width="170" HorizontalAlignment="Right">
+                                    <ComboBoxItem Content="小（32 px）" Tag="32"/>
+                                    <ComboBoxItem Content="中（40 px）" Tag="40"/>
+                                    <ComboBoxItem Content="大（48 px）" Tag="48"/>
+                                </ComboBox>
+                            </Grid>
+                            <Grid Style="{StaticResource Row}">
+                                <TextBlock Text="显示图标名称（全局默认）" Style="{StaticResource RowLabel}"/>
+                                <CheckBox x:Name="ShowNamesBox" Style="{StaticResource Switch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Style="{StaticResource Row}" Margin="0">
+                                <TextBlock Text="图标背景框不透明度" Style="{StaticResource RowLabel}"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <Slider x:Name="TileOpacitySlider" Width="190" Minimum="0.1" Maximum="0.8" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="TileOpacityText" Width="42" TextAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondary}"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- 自动隐藏 -->
+                <StackPanel x:Name="PageAutoHide" Visibility="Collapsed">
+                    <TextBlock Text="自动隐藏" Style="{StaticResource GroupTitle}"/>
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <Grid Style="{StaticResource Row}">
+                                <TextBlock Text="鼠标移开后自动淡出块内容" Style="{StaticResource RowLabel}"/>
+                                <CheckBox x:Name="AutoFadeBox" Style="{StaticResource Switch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Style="{StaticResource Row}" Margin="0">
+                                <TextBlock Text="淡出后透明度" Style="{StaticResource RowLabel}"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <Slider x:Name="FadeOpacitySlider" Width="190" Minimum="0.05" Maximum="0.5" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="FadeOpacityText" Width="42" TextAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondary}"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- 存储与数据 -->
+                <StackPanel x:Name="PageStorage" Visibility="Collapsed">
+                    <TextBlock Text="存储与数据" Style="{StaticResource GroupTitle}"/>
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <Grid Style="{StaticResource Row}">
+                                <TextBlock Text="收纳目录" Style="{StaticResource RowLabel}"/>
+                                <Button x:Name="OpenStorageButton" Content="打开目录" HorizontalAlignment="Right"/>
+                            </Grid>
+                            <TextBlock x:Name="StoragePathText" Foreground="{DynamicResource TextSecondary}" FontSize="12"
+                                       TextWrapping="Wrap" Margin="0,0,12,12"/>
+                            <Grid Style="{StaticResource Row}" Margin="0">
+                                <TextBlock Text="一键全部还原" Style="{StaticResource RowLabel}"/>
+                                <Button x:Name="RestoreAllButton" Content="所有文件移回桌面…" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
