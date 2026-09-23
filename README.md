@@ -35,6 +35,23 @@ Release 构建：
 dotnet build DesktopOrganizer.sln -c Release
 ```
 
+## 发布产物
+
+推荐普通用户下载 GitHub Releases 中的安装包：
+
+- `DesktopOrganizer-Setup-<版本>-win-x64.exe`：可选择安装目录，自动创建开始菜单入口，支持可选桌面快捷方式和标准卸载。
+- `DesktopOrganizer-<版本>-win-x64.exe`：免安装便携版，不创建快捷方式或卸载信息。
+
+两个版本都内置 .NET 8 运行时，不需要安装 SDK、配置环境变量或安装驱动。安装器默认采用当前用户安装，不要求管理员权限；卸载时保留 `%APPDATA%\DesktopOrganizer` 配置及 `%USERPROFILE%\DesktopBlocks` 中的用户文件。
+
+维护者可在装有 Inno Setup 6 的 Windows 环境执行：
+
+```powershell
+.\scripts\build-release.ps1 -Version 0.1.0
+```
+
+推送 `v*` 标签后，GitHub Actions 会自动构建安装包和便携版，并将二者附加到对应的 GitHub Release。
+
 ## 数据位置
 
 - 设置和布局：`%APPDATA%\DesktopOrganizer`
