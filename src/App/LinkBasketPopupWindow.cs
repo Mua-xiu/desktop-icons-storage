@@ -87,7 +87,7 @@ public sealed class LinkBasketPopupWindow : IDisposable
         var acrylic = BackdropService.Apply(Hwnd, color, 51,
             blurEnabled: true, dark: true) == BackdropService.BackdropKind.Acrylic;
         _view.ApplyTheme(acrylic);
-        DesktopEmbedService.ApplyRoundedCorners(Hwnd, _finish.W, _finish.H, 16,
+        DesktopEmbedService.ApplyRoundedCorners(Hwnd, _finish.W, _finish.H, 8,
             systemCorners: false);
     }
 
