@@ -91,7 +91,7 @@ docs/
 
 升级时仅复制旧配置文件。已有 `settings.json` 中的 `storageRoot` 保持原值，因此不会自动移动用户收纳文件。
 
-开发界面验证统一使用 `scripts/run-test-sandbox.ps1`。脚本设置 `DESKTOPICONSSTORAGE_TEST_ROOT`，把桌面、收纳目录、配置、实例锁和构建产物隔离到 `artifacts/test-sandbox`；测试模式拒绝沙盒外输入，也不写开机自启注册表。正式运行不设置该变量。`DESKTOPICONSSTORAGE_CONFIG_DIR` 仍可用于一般配置重定向，但不能代替完整的桌面文件隔离。
+自动烟测使用 `scripts/run-test-sandbox.ps1`。脚本设置 `DESKTOPICONSSTORAGE_TEST_ROOT`，把桌面、收纳目录、配置、实例锁和构建产物隔离到 `artifacts/test-sandbox`；自动测试拒绝沙盒外输入，也不写开机自启注册表。手动体验直接运行当前分支的 Debug 程序，使用真实桌面与现有配置。`DESKTOPICONSSTORAGE_CONFIG_DIR` 可用于一般配置重定向，但不代替自动烟测的完整文件隔离。
 
 ### 4.1 settings.json
 
@@ -159,8 +159,10 @@ docs/
 ```powershell
 dotnet restore DesktopIconsStorage.sln
 dotnet build DesktopIconsStorage.sln
-.\scripts\run-test-sandbox.ps1
+.\src\App\bin\Debug\net8.0-windows\DesktopIconsStorage.exe
 ```
+
+以上直接运行方式使用真实桌面和配置，适合用户亲自验证。编码烟测请运行 `scripts/run-test-sandbox.ps1`，只使用脚本生成的测试文件与应用图标副本。
 
 ### 6.2 Release
 

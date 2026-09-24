@@ -15,13 +15,15 @@ public sealed class LinkBasketPopupWindow : IDisposable
     private const int WsPopup = unchecked((int)0x80000000);
     private const int WsVisible = 0x10000000;
     private const int WsExToolWindow = 0x00000080;
-    private const int AnimationDurationMs = 220;
+    private const int AnimationDurationMs = 240;
 
     private readonly BlockWindow _tile;
     private readonly AppHost _host;
     private HwndSource? _source;
     private LinkBasketPopupView? _view;
-    private DispatcherTimer? _timer;
+    private DispatcherTimer? _completionTimer;
+    private EventHandler? _renderingHandler;
+    private int _animationVersion;
     private IntPtr _desktopHost;
     private bool _closing;
     private bool _ready;
@@ -103,56 +105,80 @@ public sealed class LinkBasketPopupWindow : IDisposable
 
     private void AnimateTo(double target)
     {
-        _timer?.Stop();
+        StopAnimation();
+        var version = ++_animationVersion;
         if (!SystemParameters.ClientAreaAnimation)
         {
-            _progress = target;
-            var instant = Interpolate(target);
-            DesktopEmbedService.SetBounds(Hwnd, instant.X, instant.Y,
-                instant.W, instant.H);
-            _view?.SetTransition(target);
-            if (target == 0) Dispose();
-            else
-            {
-                _ready = true;
-                DesktopEmbedService.ActivateWindow(Hwnd);
-                _view?.FocusItems();
-            }
+            FinishAnimation(target, version);
             return;
         }
         var initial = _progress;
         var watch = System.Diagnostics.Stopwatch.StartNew();
-        _timer = new DispatcherTimer(DispatcherPriority.Render)
+        var duration = Math.Max(90, AnimationDurationMs * Math.Abs(target - initial));
+        var lastBounds = Interpolate(initial);
+        // 2026-09-24：圆角 GDI 区域只在首尾更新，避免每帧重建造成明显掉帧。
+        DesktopEmbedService.BeginBoundsAnimation(Hwnd);
+        _renderingHandler = (_, _) =>
         {
-            Interval = TimeSpan.FromMilliseconds(16)
-        };
-        _timer.Tick += (_, _) =>
-        {
-            var t = Math.Min(1, watch.Elapsed.TotalMilliseconds / AnimationDurationMs);
-            var eased = 1 - Math.Pow(1 - t, 3);
+            if (_source == null || version != _animationVersion) return;
+            var t = Math.Min(1, watch.Elapsed.TotalMilliseconds / duration);
+            var eased = t * t * (3 - 2 * t);
             _progress = initial + (target - initial) * eased;
             var bounds = Interpolate(_progress);
-            if (!DesktopEmbedService.SetBoundsAnimated(Hwnd,
-                    bounds.X, bounds.Y, bounds.W, bounds.H))
+            if (bounds != lastBounds)
             {
-                _timer?.Stop();
-                Dispose();
-                return;
+                if (!DesktopEmbedService.SetBoundsAnimated(Hwnd,
+                        bounds.X, bounds.Y, bounds.W, bounds.H))
+                {
+                    Dispose();
+                    return;
+                }
+                lastBounds = bounds;
             }
             _view?.SetTransition(_progress);
-            if (t < 1) return;
-            _timer?.Stop();
-            _progress = target;
-            DesktopEmbedService.ApplyRoundedCorners(Hwnd, bounds.W, bounds.H);
-            if (target == 0) Dispose();
-            else
-            {
-                _ready = true;
-                DesktopEmbedService.ActivateWindow(Hwnd);
-                _view?.FocusItems();
-            }
+            if (t >= 1) FinishAnimation(target, version);
         };
-        _timer.Start();
+        CompositionTarget.Rendering += _renderingHandler;
+
+        // 2026-09-24：被遮挡时渲染事件可能暂停，兜底计时器只完成动画，不逐帧绘制。
+        _completionTimer = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = TimeSpan.FromMilliseconds(duration + 80)
+        };
+        _completionTimer.Tick += (_, _) => FinishAnimation(target, version);
+        _completionTimer.Start();
+    }
+
+    /// <summary>动画结束时恢复精确圆角，并交还焦点或销毁弹窗。</summary>
+    private void FinishAnimation(double target, int version)
+    {
+        if (_source == null || version != _animationVersion) return;
+        ++_animationVersion;
+        StopAnimation();
+        _progress = target;
+        var bounds = Interpolate(target);
+        if (!DesktopEmbedService.SetBounds(Hwnd,
+                bounds.X, bounds.Y, bounds.W, bounds.H))
+        {
+            Dispose();
+            return;
+        }
+        _view?.SetTransition(target);
+        if (target == 0) { Dispose(); return; }
+        _ready = true;
+        DesktopEmbedService.ActivateWindow(Hwnd);
+        _view?.FocusItems();
+    }
+
+    private void StopAnimation()
+    {
+        if (_renderingHandler != null)
+        {
+            CompositionTarget.Rendering -= _renderingHandler;
+            _renderingHandler = null;
+        }
+        _completionTimer?.Stop();
+        _completionTimer = null;
     }
 
     private (int X, int Y, int W, int H) Interpolate(double progress)
@@ -189,8 +215,8 @@ public sealed class LinkBasketPopupWindow : IDisposable
 
     public void Dispose()
     {
-        _timer?.Stop();
-        _timer = null;
+        ++_animationVersion;
+        StopAnimation();
         if (_source != null)
         {
             BackdropService.Clear(_source.Handle);
