@@ -52,7 +52,6 @@ public partial class LinkBasketPopupView : UserControl
         _popup = popup;
         _host = host;
         IconList.ItemsSource = Items;
-        SurfaceRoot.SizeChanged += (_, _) => UpdateRoundedClip();
         IconList.SizeChanged += (_, _) => UpdatePageCapacity();
         Loaded += (_, _) => UpdatePageCapacity();
         NamesToggle.Checked += (_, _) => SetShowNames(true);
@@ -69,14 +68,6 @@ public partial class LinkBasketPopupView : UserControl
         ContentGrid.RenderTransformOrigin = new Point(0.5, 0.5);
         ContentGrid.RenderTransform = _transitionScale;
         SetTransition(0);
-    }
-
-    /// <summary>2026-09-24：按设置窗口的 8 像素圆角裁剪弹窗内容，防止毛玻璃背景露出方角。</summary>
-    private void UpdateRoundedClip()
-    {
-        if (SurfaceRoot.ActualWidth <= 0 || SurfaceRoot.ActualHeight <= 0) return;
-        SurfaceRoot.Clip = new RectangleGeometry(
-            new Rect(0, 0, SurfaceRoot.ActualWidth, SurfaceRoot.ActualHeight), 7, 7);
     }
 
     /// <summary>2026-09-24：静止的弹窗只动画内容透明度和轻微缩放，避免毛玻璃移动拖影。</summary>

@@ -173,7 +173,6 @@ internal static class NativeMethods
     internal const int DWMWA_BORDER_COLOR = 34;
     internal const int DWMWA_SYSTEMBACKDROP_TYPE = 38;
     internal const int DWMWCP_ROUND = 2;
-    internal const int DWMWCP_DONOTROUND = 1;
     internal const int DWMWA_COLOR_NONE = unchecked((int)0xFFFFFFFE);
     internal const int DWMSBT_NONE = 1;
     internal const int DWMSBT_MAINWINDOW = 2;     // Mica
