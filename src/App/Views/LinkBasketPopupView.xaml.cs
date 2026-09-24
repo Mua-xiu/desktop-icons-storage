@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using DesktopIconsStorage.App.Helpers;
 using DesktopIconsStorage.Core.Models;
 using DesktopIconsStorage.Platform.Services;
@@ -17,6 +18,7 @@ public partial class LinkBasketPopupView : UserControl
     private readonly BlockWindow _tile;
     private readonly LinkBasketPopupWindow _popup;
     private readonly AppHost _host;
+    private readonly ScaleTransform _transitionScale = new();
     private Point _dragStart;
 
     public BlockItemsCollection Items { get; } = new();
@@ -57,18 +59,41 @@ public partial class LinkBasketPopupView : UserControl
         IconList.KeyDown += OnKeyDown;
         RefreshItems();
         NamesToggle.IsChecked = _tile.Block.ShowIconNames ?? _host.Settings.ShowIconNames;
-        TransitionPreview.Source = _tile.CapturePreview();
+        ContentGrid.RenderTransformOrigin = new Point(0.5, 0.5);
+        ContentGrid.RenderTransform = _transitionScale;
         SetTransition(0);
     }
 
-    /// <summary>按空间进度交接小盒快照与展开内容，避免跨窗口瞬间跳变。</summary>
+    /// <summary>2026-09-24：静止的弹窗只动画内容透明度和轻微缩放，避免毛玻璃移动拖影。</summary>
     public void SetTransition(double progress)
     {
-        var content = Math.Clamp((progress - 0.28) / 0.50, 0, 1);
-        ContentGrid.Opacity = content;
+        ContentGrid.BeginAnimation(UIElement.OpacityProperty, null);
+        _transitionScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        _transitionScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+        ContentGrid.Opacity = progress;
         ContentGrid.IsHitTestVisible = progress >= 1;
-        TransitionPreview.Opacity = 1 - content;
-        TransitionPreview.Visibility = content >= 1 ? Visibility.Collapsed : Visibility.Visible;
+        _transitionScale.ScaleX = 0.97 + 0.03 * progress;
+        _transitionScale.ScaleY = 0.97 + 0.03 * progress;
+    }
+
+    /// <summary>让 WPF 组合器完成开合动效，返回时长供窗口生命周期兜底使用。</summary>
+    public int AnimateTransition(bool opening, Action completed)
+    {
+        var duration = opening ? 180 : 140;
+        var easing = new CubicEase
+        {
+            EasingMode = opening ? EasingMode.EaseOut : EasingMode.EaseIn
+        };
+        ContentGrid.IsHitTestVisible = false;
+        var opacity = new DoubleAnimation(opening ? 1 : 0,
+            TimeSpan.FromMilliseconds(duration)) { EasingFunction = easing };
+        opacity.Completed += (_, _) => completed();
+        ContentGrid.BeginAnimation(UIElement.OpacityProperty, opacity);
+        var scale = new DoubleAnimation(opening ? 1 : 0.98,
+            TimeSpan.FromMilliseconds(duration)) { EasingFunction = easing };
+        _transitionScale.BeginAnimation(ScaleTransform.ScaleXProperty, scale);
+        _transitionScale.BeginAnimation(ScaleTransform.ScaleYProperty, scale);
+        return duration;
     }
 
     /// <summary>刷新仅加载 .lnk；普通文件属于异常内容，不作为链接目标展示。</summary>

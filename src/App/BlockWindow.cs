@@ -294,9 +294,6 @@ public class BlockWindow : IDisposable
         if (_linkPopup == popup) _linkPopup = null;
     }
 
-    public System.Windows.Media.Imaging.BitmapSource? CapturePreview() =>
-        _linkView?.CapturePreview();
-
     /// <summary>按行列重新计算小盒尺寸；只能由右键规格菜单调用。</summary>
     public void SetLinkPreviewSize(int rows, int columns)
     {

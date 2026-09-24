@@ -80,7 +80,10 @@ public class BlockManager
         if (newName.Length == 0 || newName == block.Name) return;
         ValidateFolderName(newName);
 
-        var newPath = Path.Combine(_settings.StorageRoot, newName);
+        // 2026-09-24：历史收纳盒仍可能位于 DesktopBlocks，重命名只改变原目录名称。
+        var parent = Path.GetDirectoryName(Path.GetFullPath(block.FolderPath))
+                     ?? throw new IOException("收纳盒目录无效。");
+        var newPath = Path.Combine(parent, newName);
         RuntimePaths.EnsureSandboxPath(newPath);
         if (!string.Equals(block.FolderPath, newPath, StringComparison.OrdinalIgnoreCase))
         {
@@ -183,15 +186,24 @@ public class BlockManager
         foreach (var file in GetValidatedLinkFiles(block)) File.Delete(file);
     }
 
-    /// <summary>只能清理收纳根目录的直接子目录，防止异常布局误删其他位置的文件。</summary>
+    /// <summary>2026-09-24：兼容历史 DesktopBlocks，并限制链接筐清理范围。</summary>
     private void EnsureManagedFolder(Block block)
     {
+        if (!_blocks.Contains(block))
+            throw new IOException("收纳盒不属于当前布局，不能执行文件清理。");
         var root = Path.GetFullPath(_settings.StorageRoot).TrimEnd(
+            Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var legacy = RuntimePaths.SandboxRoot is { } sandbox
+            ? Path.Combine(sandbox, "LegacyStorage")
+            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "DesktopBlocks");
+        legacy = Path.GetFullPath(legacy).TrimEnd(
             Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         var folder = Path.GetFullPath(block.FolderPath).TrimEnd(
             Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        if (!string.Equals(Path.GetDirectoryName(folder), root,
-                StringComparison.OrdinalIgnoreCase))
+        var parent = Path.GetDirectoryName(folder);
+        if (!string.Equals(parent, root, StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(parent, legacy, StringComparison.OrdinalIgnoreCase))
             throw new IOException($"收纳盒目录不在受管理的收纳根目录内：{folder}");
     }
 

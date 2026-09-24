@@ -89,7 +89,7 @@ docs/
 %USERPROFILE%\DesktopBlocks
 ```
 
-升级时仅复制旧配置文件。已有 `settings.json` 中的 `storageRoot` 保持原值，因此不会自动移动用户收纳文件。
+升级时仅复制旧配置文件，不自动移动用户收纳文件。即使 `settings.json` 已使用新的收纳根目录，历史布局的盒目录也可能仍在 `%USERPROFILE%\DesktopBlocks`；现有链接筐允许加载这个已知旧根目录，重命名只在原目录内进行。
 
 自动烟测使用 `scripts/run-test-sandbox.ps1`。脚本设置 `DESKTOPICONSSTORAGE_TEST_ROOT`，把桌面、收纳目录、配置、实例锁和构建产物隔离到 `artifacts/test-sandbox`；自动测试拒绝沙盒外输入，也不写开机自启注册表。手动体验直接运行当前分支的 Debug 程序，使用真实桌面与现有配置。`DESKTOPICONSSTORAGE_CONFIG_DIR` 可用于一般配置重定向，但不代替自动烟测的完整文件隔离。
 

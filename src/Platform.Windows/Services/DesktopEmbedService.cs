@@ -88,15 +88,6 @@ public static class DesktopEmbedService
         return true;
     }
 
-    /// <summary>2026-09-24：动画开始时移除旧裁剪，避免窗口放大时被原尺寸区域截断。</summary>
-    public static void BeginBoundsAnimation(IntPtr hwnd) =>
-        NativeMethods.SetWindowRgn(hwnd, IntPtr.Zero, false);
-
-    /// <summary>2026-09-24：动画帧只更新窗口几何，圆角区域在结束时一次性恢复。</summary>
-    public static bool SetBoundsAnimated(IntPtr hwnd, int screenX, int screenY, int w, int h)
-        => NativeMethods.SetWindowPos(hwnd, IntPtr.Zero, screenX, screenY, w, h,
-            NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOACTIVATE);
-
     /// <summary>把块窗口钉在桌面图标视图正上方（创建/重挂接后调用）。</summary>
     public static void RaiseAboveDesktopIcons(IntPtr hwnd) =>
         NativeMethods.SetWindowPos(hwnd, GetDesktopIconView(), 0, 0, 0, 0,

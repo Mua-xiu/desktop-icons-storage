@@ -62,8 +62,6 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
             </Grid>
-            <!-- 过渡层：开始时显示小盒快照，几何变化后与完整内容交接。 -->
-            <Image x:Name="TransitionPreview" Stretch="Fill" IsHitTestVisible="False"/>
         </Grid>
     </Border>
 </UserControl>

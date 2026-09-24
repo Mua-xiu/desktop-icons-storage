@@ -68,6 +68,29 @@ manager.DeleteLinkFilesForUninstall(uninstallBlock);
 manager.RemoveEmptyLinkBlock(uninstallBlock);
 Check(File.Exists(sample), "卸载清理不能删除快捷方式目标");
 
+// 历史布局仍指向旧收纳根目录；链接筐应可加载，重命名不迁走真实目录。
+var legacyFolder = Path.Combine(root, "LegacyStorage", "旧链接筐");
+Directory.CreateDirectory(legacyFolder);
+ShellLinkService.Create(sample, Path.Combine(legacyFolder, "测试文件.lnk"));
+var legacyBlock = new Block
+{
+    Name = "旧链接筐",
+    Mode = BlockModes.Link,
+    FolderPath = legacyFolder
+};
+JsonStore.Save(JsonStore.LayoutPath, new List<Block> { legacyBlock });
+var legacyManager = new BlockManager(new AppSettings
+{
+    StorageRoot = Path.Combine(root, "Storage")
+});
+legacyManager.Load();
+Check(legacyManager.GetValidatedLinkFiles(legacyManager.Blocks.Single()).Count == 1,
+    "历史 DesktopBlocks 布局应能加载快捷方式");
+legacyManager.RenameBlock(legacyManager.Blocks.Single(), "旧链接筐已改名");
+Check(Path.GetDirectoryName(legacyManager.Blocks.Single().FolderPath) ==
+      Path.Combine(root, "LegacyStorage"),
+    "历史收纳筐重命名不能改变其收纳根路径");
+
 Console.WriteLine("链接筐隔离烟测通过；真实桌面文件未参与测试。");
 
 /// <summary>断言测试中的安全边界。</summary>

@@ -3,7 +3,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Media.Effects;
 using DesktopIconsStorage.App.Helpers;
 using DesktopIconsStorage.Core.Models;
@@ -72,20 +71,6 @@ public partial class LinkBasketTileView : UserControl
     {
         var icon = await Task.Run(() => ShellIconService.GetIcon(path, 48));
         if (icon != null && PreviewGrid.Children.Contains(image)) image.Source = icon;
-    }
-
-    /// <summary>过渡动画只拍摄应用自身小盒，不读取或保存桌面图标文件。</summary>
-    public BitmapSource? CapturePreview()
-    {
-        if (ActualWidth <= 0 || ActualHeight <= 0) return null;
-        var dpi = VisualTreeHelper.GetDpi(this);
-        var bitmap = new RenderTargetBitmap(
-            Math.Max(1, (int)Math.Ceiling(ActualWidth * dpi.DpiScaleX)),
-            Math.Max(1, (int)Math.Ceiling(ActualHeight * dpi.DpiScaleY)),
-            96 * dpi.DpiScaleX, 96 * dpi.DpiScaleY, PixelFormats.Pbgra32);
-        bitmap.Render(this);
-        bitmap.Freeze();
-        return bitmap;
     }
 
     /// <summary>小盒使用固定 10% 背景叠色，图标和文字保持完整不透明度。</summary>
