@@ -90,11 +90,20 @@
                                        Height="{Binding IconSize, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                        HorizontalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
                             </Border>
-                            <TextBlock Text="{Binding Name}" FontSize="11" TextAlignment="Center"
-                                       TextWrapping="Wrap" TextTrimming="CharacterEllipsis"
-                                       MaxHeight="30" Margin="0,4,0,0"
+                            <TextBlock x:Name="ItemName" Text="{Binding Name}" FontSize="11" TextAlignment="Center"
+                                       TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                       MaxHeight="18" Margin="0,4,0,0"
                                        Visibility="{Binding NamesVisibility, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
                         </StackPanel>
+                        <DataTemplate.Triggers>
+                            <!-- 2026-09-24：旧模式名称默认单行，选中后才展开完整文本。 -->
+                            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                <Setter TargetName="ItemName" Property="TextWrapping" Value="Wrap"/>
+                                <Setter TargetName="ItemName" Property="TextTrimming" Value="None"/>
+                                <Setter TargetName="ItemName" Property="MaxHeight" Value="1000"/>
+                                <Setter TargetName="ItemName" Property="Background" Value="{DynamicResource CardBg}"/>
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
                 <ListBox.ItemContainerStyle>
@@ -117,6 +126,11 @@
                                 </ControlTemplate>
                             </Setter.Value>
                         </Setter>
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Panel.ZIndex" Value="100"/>
+                            </Trigger>
+                        </Style.Triggers>
                     </Style>
                 </ListBox.ItemContainerStyle>
             </ListBox>

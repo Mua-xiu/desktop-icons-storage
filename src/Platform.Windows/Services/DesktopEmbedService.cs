@@ -97,7 +97,8 @@ public static class DesktopEmbedService
     /// <summary>
     /// 用窗口区域裁剪出圆角，并与各视图 RootBorder 的实际半径保持一致。
     /// </summary>
-    public static void ApplyRoundedCorners(IntPtr hwnd, int w, int h, int cornerRadiusDip = 8)
+    public static void ApplyRoundedCorners(IntPtr hwnd, int w, int h, int cornerRadiusDip = 8,
+        bool systemCorners = true)
     {
         if (w <= 0 || h <= 0) return;
 
@@ -105,7 +106,9 @@ public static class DesktopEmbedService
         // 先声明系统圆角偏好，再用窗口区域作旧系统与无边框弹窗的可靠兜底。
         try
         {
-            int preference = NativeMethods.DWMWCP_ROUND;
+            // 2026-09-24：弹窗只用窗口区域裁剪，关闭 DWM 的第二层圆角以消除双弧线。
+            int preference = systemCorners ? NativeMethods.DWMWCP_ROUND
+                : NativeMethods.DWMWCP_DONOTROUND;
             NativeMethods.DwmSetWindowAttribute(
                 hwnd, NativeMethods.DWMWA_WINDOW_CORNER_PREFERENCE, ref preference, sizeof(int));
 

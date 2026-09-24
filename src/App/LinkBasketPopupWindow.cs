@@ -79,15 +79,16 @@ public sealed class LinkBasketPopupWindow : IDisposable
 
     public void RefreshItems() => _view?.RefreshItems();
 
-    /// <summary>展开窗口固定 20% 背景叠色，主题颜色与应用全局设置同步。</summary>
+    /// <summary>2026-09-24：新模式弹窗使用固定深色底板和 20% 毛玻璃，与全局主题无关。</summary>
     public void ApplyTheme()
     {
         if (_source == null || _view == null) return;
-        var color = _host.ThemePalette.WindowBackground;
+        var color = Color.FromRgb(0x20, 0x20, 0x20);
         var acrylic = BackdropService.Apply(Hwnd, color, 51,
-            blurEnabled: true, _host.IsDarkTheme) == BackdropService.BackdropKind.Acrylic;
-        _view.ApplyTheme(_host.IsDarkTheme, acrylic);
-        DesktopEmbedService.ApplyRoundedCorners(Hwnd, _finish.W, _finish.H, 16);
+            blurEnabled: true, dark: true) == BackdropService.BackdropKind.Acrylic;
+        _view.ApplyTheme(acrylic);
+        DesktopEmbedService.ApplyRoundedCorners(Hwnd, _finish.W, _finish.H, 16,
+            systemCorners: false);
     }
 
     public void CloseAnimated()

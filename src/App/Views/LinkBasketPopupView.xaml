@@ -3,6 +3,16 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              FontFamily="Segoe UI Variable Text, Microsoft YaHei UI" FontSize="13">
     <UserControl.Resources>
+        <!-- 新模式窗口固定深色，避免应用主题切换改变开关和文字的对比度。 -->
+        <SolidColorBrush x:Key="TextPrimary" Color="White"/>
+        <SolidColorBrush x:Key="TrackOff" Color="#FF5A5A5A"/>
+        <SolidColorBrush x:Key="Accent" Color="#FF3D9BFF"/>
+        <Style TargetType="ToolTip">
+            <Setter Property="Background" Value="#FF2B2B2E"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#FF505055"/>
+            <Setter Property="Padding" Value="10,6"/>
+        </Style>
         <!-- 页面圆点在一页时隐藏，多页时保持轻量且可点击。 -->
         <Style x:Key="PageDot" TargetType="Button">
             <Setter Property="Width" Value="12"/>
@@ -28,10 +38,9 @@
             </Setter>
         </Style>
     </UserControl.Resources>
-    <Border x:Name="RootBorder" CornerRadius="16" BorderThickness="1"
-            Background="Transparent" BorderBrush="#70FFFFFF">
+    <Border x:Name="RootBorder" Background="Transparent">
         <Grid>
-            <Border x:Name="TintLayer" CornerRadius="16" Background="#33202020"/>
+            <Border x:Name="TintLayer" Background="#33202020"/>
             <Grid x:Name="ContentGrid">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="54"/>
@@ -55,7 +64,7 @@
                                   AutomationProperties.Name="显示名称"/>
                     </StackPanel>
                 </Grid>
-                <!-- 快捷方式列表：关闭名称时使用随主题变化的完整名称提示。 -->
+                <!-- 快捷方式列表：始终提示完整名称，单击选中时展开标签。 -->
                 <ListBox x:Name="IconList" Grid.Row="1" Margin="10,0,10,12"
                          Background="Transparent" BorderThickness="0" SelectionMode="Extended"
                          AllowDrop="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -68,25 +77,60 @@
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Width="88" Margin="2" HorizontalAlignment="Center"
-                                        ToolTipService.IsEnabled="{Binding NamesHidden, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                        ToolTipService.Placement="Mouse"
+                                        ToolTipService.InitialShowDelay="250">
                                 <StackPanel.ToolTip>
-                                    <ToolTip Background="{DynamicResource PopupBg}"
-                                             Foreground="{DynamicResource TextPrimary}"
-                                             BorderBrush="{DynamicResource BorderSoft}"
-                                             Padding="10,6" Content="{Binding Name}"/>
+                                    <ToolTip Background="#FF2B2B2E" Foreground="White"
+                                             BorderBrush="#FF505055" Padding="10,6"
+                                             Content="{Binding PlacementTarget.DataContext.Name, RelativeSource={RelativeSource Self}}"/>
                                 </StackPanel.ToolTip>
                                 <Border Width="62" Height="62" CornerRadius="10"
                                         Background="#30FFFFFF" HorizontalAlignment="Center">
                                     <Image Source="{Binding Icon}" Width="44" Height="44"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="{Binding Name}" Margin="2,5,2,0"
-                                           TextAlignment="Center" TextWrapping="Wrap"
-                                           TextTrimming="CharacterEllipsis" MaxHeight="32"
+                                <TextBlock x:Name="ItemName" Text="{Binding Name}" Margin="2,5,2,0"
+                                           TextAlignment="Center" TextWrapping="NoWrap"
+                                           TextTrimming="CharacterEllipsis" MaxHeight="20"
                                            Visibility="{Binding NamesVisibility, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
                             </StackPanel>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                    <Setter TargetName="ItemName" Property="TextWrapping" Value="Wrap"/>
+                                    <Setter TargetName="ItemName" Property="TextTrimming" Value="None"/>
+                                    <Setter TargetName="ItemName" Property="MaxHeight" Value="1000"/>
+                                    <Setter TargetName="ItemName" Property="Background" Value="#D9222B3C"/>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border x:Name="SelectionSurface" Background="Transparent" CornerRadius="6">
+                                            <ContentPresenter/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="SelectionSurface" Property="Background" Value="#443D9BFF"/>
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="SelectionSurface" Property="Background" Value="#24FFFFFF"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Panel.ZIndex" Value="100"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
                 </ListBox>
                 <!-- 多页时在窗口底部居中显示可切换的页面圆点。 -->
                 <StackPanel x:Name="PageDots" Grid.Row="2" Orientation="Horizontal"

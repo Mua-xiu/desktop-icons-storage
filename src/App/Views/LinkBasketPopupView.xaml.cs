@@ -12,7 +12,7 @@ using Button = System.Windows.Controls.Button;
 
 namespace DesktopIconsStorage.App.Views;
 
-/// <summary>链接筐展开窗口：完整快捷方式列表、名称开关和主题化悬浮提示。</summary>
+/// <summary>链接筐展开窗口：完整快捷方式列表、名称开关和固定深色悬浮提示。</summary>
 public partial class LinkBasketPopupView : UserControl
 {
     private const string ReorderFormat = "DesktopIconsStorage.LinkBasketReorderId";
@@ -56,7 +56,7 @@ public partial class LinkBasketPopupView : UserControl
         Loaded += (_, _) => UpdatePageCapacity();
         NamesToggle.Checked += (_, _) => SetShowNames(true);
         NamesToggle.Unchecked += (_, _) => SetShowNames(false);
-        IconList.PreviewMouseLeftButtonUp += OnOpenItem;
+        IconList.MouseDoubleClick += OnOpenItem;
         IconList.PreviewMouseRightButtonDown += OnRightClick;
         IconList.PreviewMouseLeftButtonDown += OnItemMouseDown;
         IconList.PreviewMouseMove += OnDragStart;
@@ -169,7 +169,7 @@ public partial class LinkBasketPopupView : UserControl
             {
                 Style = (Style)FindResource("PageDot"),
                 Background = new SolidColorBrush(page == _currentPage
-                    ? _host.AccentColor : _host.ThemePalette.TrackOff),
+                    ? Color.FromRgb(0x3D, 0x9B, 0xFF) : Color.FromRgb(0x5A, 0x5A, 0x5A)),
                 ToolTip = $"第 {page + 1} 页"
             };
             System.Windows.Automation.AutomationProperties.SetName(dot,
@@ -194,18 +194,14 @@ public partial class LinkBasketPopupView : UserControl
         return true;
     }
 
-    /// <summary>展开窗口固定 20% 磨砂叠色，文字与提示层保持主题对比度。</summary>
-    public void ApplyTheme(bool dark, bool acrylic)
+    /// <summary>2026-09-24：展开窗口保持固定深色和 20% 磨砂叠色，不随全局主题切换。</summary>
+    public void ApplyTheme(bool acrylic)
     {
-        var palette = _host.ThemePalette;
+        var color = Color.FromRgb(0x20, 0x20, 0x20);
         TintLayer.Background = acrylic ? Brushes.Transparent
-            : new SolidColorBrush(Color.FromArgb(51, palette.WindowBackground.R,
-                palette.WindowBackground.G, palette.WindowBackground.B));
-        TitleText.Foreground = new SolidColorBrush(palette.TextPrimary);
-        IconList.Foreground = new SolidColorBrush(palette.TextPrimary);
-        RootBorder.BorderBrush = new SolidColorBrush(dark
-            ? Color.FromArgb(105, 255, 255, 255)
-            : Color.FromArgb(95, 0, 0, 0));
+            : new SolidColorBrush(Color.FromArgb(51, color.R, color.G, color.B));
+        TitleText.Foreground = Brushes.White;
+        IconList.Foreground = Brushes.White;
     }
 
     private void SetShowNames(bool show)
@@ -226,6 +222,7 @@ public partial class LinkBasketPopupView : UserControl
         string.Equals(Path.GetDirectoryName(path), _tile.Block.FolderPath,
             StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>2026-09-24：与桌面一致，单击仅选中，双击才打开快捷方式目标。</summary>
     private void OnOpenItem(object sender, MouseButtonEventArgs e)
     {
         if (Keyboard.Modifiers is not ModifierKeys.None) return;
