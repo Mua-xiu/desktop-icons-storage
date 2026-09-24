@@ -14,12 +14,15 @@ public static class JsonStore
     private static string? ConfigOverride =>
         Environment.GetEnvironmentVariable("DESKTOPICONSSTORAGE_CONFIG_DIR");
 
-    public static string ConfigDir => string.IsNullOrWhiteSpace(ConfigOverride)
-        ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DesktopIconsStorage")
-        : Path.GetFullPath(ConfigOverride);
+    public static string ConfigDir => RuntimePaths.SandboxConfigRoot
+        ?? (string.IsNullOrWhiteSpace(ConfigOverride)
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DesktopIconsStorage")
+            : Path.GetFullPath(ConfigOverride));
 
     /// <summary>0.1.x 版本使用的旧配置目录，仅用于一次性兼容迁移。</summary>
-    public static string LegacyConfigDir => string.IsNullOrWhiteSpace(ConfigOverride)
+    public static string LegacyConfigDir => RuntimePaths.SandboxRoot is { } sandbox
+        ? Path.Combine(sandbox, "LegacyConfig")
+        : string.IsNullOrWhiteSpace(ConfigOverride)
         ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DesktopOrganizer")
         : Path.Combine(ConfigDir, "legacy");
 

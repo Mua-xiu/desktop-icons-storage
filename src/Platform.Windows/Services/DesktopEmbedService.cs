@@ -78,6 +78,17 @@ public static class DesktopEmbedService
         return true;
     }
 
+    /// <summary>过渡帧只更新几何与圆角区域，避免每帧重设 DWM 材质属性。</summary>
+    public static bool SetBoundsAnimated(IntPtr hwnd, int screenX, int screenY, int w, int h)
+    {
+        if (!NativeMethods.SetWindowPos(hwnd, IntPtr.Zero, screenX, screenY, w, h,
+                NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOACTIVATE)) return false;
+        var ellipse = (int)(16 * DpiHelper.WindowScale(hwnd));
+        var region = NativeMethods.CreateRoundRectRgn(0, 0, w, h, ellipse, ellipse);
+        NativeMethods.SetWindowRgn(hwnd, region, true);
+        return true;
+    }
+
     /// <summary>把块窗口钉在桌面图标视图正上方（创建/重挂接后调用）。</summary>
     public static void RaiseAboveDesktopIcons(IntPtr hwnd) =>
         NativeMethods.SetWindowPos(hwnd, GetDesktopIconView(), 0, 0, 0, 0,

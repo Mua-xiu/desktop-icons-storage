@@ -21,7 +21,15 @@ public partial class DeleteBlockDialog : Window
         InitializeComponent();
         _host = host;
         _others = otherBoxes;
-        PromptText.Text = $"确定删除收纳盒“{block.Name}”吗？请选择盒内文件的处理方式。";
+        PromptText.Text = block.IsLink
+            ? $"确定删除快捷方式收纳筐“{block.Name}”吗？请选择快捷图标的处理方式。"
+            : $"确定删除收纳盒“{block.Name}”吗？请选择盒内文件的处理方式。";
+        if (block.IsLink)
+        {
+            OptDesktop.Content = "删除收纳筐及所有快捷图标（推荐）";
+            OptMove.Content = "快捷图标移入其他收纳盒";
+            RiskText.Text = "只处理快捷方式文件，不删除它们指向的原文件；快捷图标不会散落到桌面。";
+        }
         TargetCombo.ItemsSource = _others.Select(b => b.Name);
         SourceInitialized += (_, _) => ApplyWindowTheme();
         if (_others.Count > 0)

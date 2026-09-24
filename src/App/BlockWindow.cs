@@ -28,6 +28,8 @@ public class BlockWindow : IDisposable
     private readonly AppHost _host;
     private HwndSource? _source;
     private BlockView? _view;
+    private LinkBasketTileView? _linkView;
+    private LinkBasketPopupWindow? _linkPopup;
     private FolderWatchService? _watcher;
     private volatile bool _needsRecreate;
     private long _suppressWatcherUntilUtcTicks;
@@ -51,7 +53,8 @@ public class BlockWindow : IDisposable
     private void CreateSource()
     {
         _hostHwnd = DesktopEmbedService.GetDesktopHostWindow();
-        var height = Block.Collapsed ? TitleBarHeight : (int)Block.Height;
+        var height = Block.IsLink ? (int)Block.Height
+            : Block.Collapsed ? TitleBarHeight : (int)Block.Height;
         _actualHeight = height;
 
         // NoFences 同款模型：顶层 WS_POPUP 窗口 + owner = Progman。
@@ -73,8 +76,16 @@ public class BlockWindow : IDisposable
             // 透明像素透出 DWM 毛玻璃
             CompositionTarget = { BackgroundColor = Colors.Transparent }
         };
-        _view = new BlockView(this, _host);
-        _source.RootVisual = _view;
+        if (Block.IsLink)
+        {
+            _linkView = new LinkBasketTileView(this, _host);
+            _source.RootVisual = _linkView;
+        }
+        else
+        {
+            _view = new BlockView(this, _host);
+            _source.RootVisual = _view;
+        }
         _source.AddHook(WndProc);
 
         // HwndSource 首次创建不会经过 SetBounds；必须立即设置窗口区域，
@@ -85,14 +96,29 @@ public class BlockWindow : IDisposable
         DesktopEmbedService.RaiseAboveDesktopIcons(_source.Handle);
 
         ApplyBackdrop();
-        _view.OnCollapsedChanged(Block.Collapsed);
-        _view.RefreshItems();
+        _view?.OnCollapsedChanged(Block.Collapsed);
+        _view?.RefreshItems();
+        _linkView?.RefreshItems();
     }
 
     /// <summary>应用 DWM 亚克力 + 圆角裁剪（半径已修正，与 RootBorder 对齐）。</summary>
     public void ApplyBackdrop()
     {
-        if (_source == null || _view == null) return;
+        if (_source == null) return;
+        if (Block.IsLink)
+        {
+            // 预览小盒固定 10% 磨砂叠色，不读取全局背景不透明度滑块。
+            var tint = Color.FromRgb(0x70, 0x70, 0x70);
+            var acrylic = BackdropService.Apply(Hwnd, tint, 26,
+                blurEnabled: true, dark: true) ==
+                BackdropService.BackdropKind.Acrylic;
+            _linkView?.ApplyTheme(acrylic);
+            _linkPopup?.ApplyTheme();
+            DesktopEmbedService.ApplyRoundedCorners(Hwnd,
+                (int)Block.Width, (int)Block.Height);
+            return;
+        }
+        if (_view == null) return;
         var effectiveOpacity = EffectiveBackdropOpacity();
         var alpha = (byte)Math.Clamp((int)(effectiveOpacity * 255), 40, 255);
         var palette = _host.ThemePalette;
@@ -146,7 +172,12 @@ public class BlockWindow : IDisposable
             {
                 // 应用内部移动已经主动刷新过列表，跳过随后到达的监听回调，避免图标整组闪烁。
                 if (DateTime.UtcNow.Ticks < Interlocked.Read(ref _suppressWatcherUntilUtcTicks)) return;
-                _source?.Dispatcher.BeginInvoke(() => _view?.RefreshItems());
+                _source?.Dispatcher.BeginInvoke(() =>
+                {
+                    _view?.RefreshItems();
+                    _linkView?.RefreshItems();
+                    _linkPopup?.RefreshItems();
+                });
             };
         }
         catch { /* 文件夹暂不可用时忽略，由用户操作触发刷新 */ }
@@ -156,7 +187,12 @@ public class BlockWindow : IDisposable
 
     public void RefreshView()
     {
-        try { _source?.Dispatcher.Invoke(() => _view?.RefreshItems()); } catch { }
+        try { _source?.Dispatcher.Invoke(() =>
+        {
+            _view?.RefreshItems();
+            _linkView?.RefreshItems();
+            _linkPopup?.RefreshItems();
+        }); } catch { }
     }
 
     /// <summary>内部文件操作后立即刷新一次，并暂时抑制 FileSystemWatcher 的重复刷新。</summary>
@@ -217,10 +253,47 @@ public class BlockWindow : IDisposable
 
     public void SetCollapsed(bool collapsed)
     {
+        if (Block.IsLink) return;
         Block.Collapsed = collapsed;
         // 滚动条已隐藏，无需处理溢出闪烁；直接动画到目标高度
         AnimateHeightTo(collapsed ? TitleBarHeight : (int)Block.Height);
         _view?.OnCollapsedChanged(collapsed);
+        _host.PersistLayout();
+    }
+
+    /// <summary>链接筐点击时打开独立居中窗口，重复点击不创建第二个弹窗。</summary>
+    public void OpenLinkPopup()
+    {
+        if (!Block.IsLink || _linkPopup != null) return;
+        _linkPopup = new LinkBasketPopupWindow(this, _host);
+        try { _linkPopup.Show(); }
+        catch (Exception ex)
+        {
+            Helpers.AppHost.LogError("OpenLinkPopup", ex);
+            _linkPopup.Dispose();
+            _linkPopup = null;
+            _host.NotifyError("打开收纳筐失败，请查看错误日志。");
+        }
+    }
+
+    public void OnLinkPopupClosed(LinkBasketPopupWindow popup)
+    {
+        if (_linkPopup == popup) _linkPopup = null;
+    }
+
+    public System.Windows.Media.Imaging.BitmapSource? CapturePreview() =>
+        _linkView?.CapturePreview();
+
+    /// <summary>按行列重新计算小盒尺寸；只能由右键规格菜单调用。</summary>
+    public void SetLinkPreviewSize(int rows, int columns)
+    {
+        if (!Block.IsLink) return;
+        Block.PreviewRows = rows;
+        Block.PreviewColumns = columns;
+        var scale = DpiHelper.SystemScale;
+        SetSizeScreen((int)((columns * 52 + 24) * scale),
+            (int)((rows * 52 + 55) * scale));
+        _linkView?.RefreshItems();
         _host.PersistLayout();
     }
 
@@ -312,6 +385,8 @@ public class BlockWindow : IDisposable
 
     private void DisposeSource()
     {
+        _linkPopup?.Dispose();
+        _linkPopup = null;
         if (_source != null)
         {
             BackdropService.Clear(_source.Handle);
@@ -319,6 +394,7 @@ public class BlockWindow : IDisposable
             _source.Dispose();
             _source = null;
             _view = null;
+            _linkView = null;
         }
     }
 

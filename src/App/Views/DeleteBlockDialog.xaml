@@ -83,7 +83,7 @@
         <!-- 风险提示 -->
         <Border Grid.Row="2" Background="{DynamicResource ControlBg}"
                 CornerRadius="6" Padding="12,10" Margin="0,0,0,20">
-            <TextBlock Text="删除后收纳盒对应的空文件夹也会被移除，文件不会被直接删除。"
+            <TextBlock x:Name="RiskText" Text="删除后收纳盒对应的空文件夹也会被移除，文件不会被直接删除。"
                        TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12"/>
         </Border>
 

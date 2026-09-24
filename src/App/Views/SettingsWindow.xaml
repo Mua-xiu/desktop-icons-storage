@@ -271,7 +271,7 @@
                                        TextWrapping="Wrap" Margin="0,0,12,12"/>
                             <Grid Style="{StaticResource Row}" Margin="0">
                                 <TextBlock Text="一键全部还原" Style="{StaticResource RowLabel}"/>
-                                <Button x:Name="RestoreAllButton" Content="所有文件移回桌面…" HorizontalAlignment="Right"/>
+                                <Button x:Name="RestoreAllButton" Content="一键还原收纳内容…" HorizontalAlignment="Right"/>
                             </Grid>
                         </StackPanel>
                     </Border>

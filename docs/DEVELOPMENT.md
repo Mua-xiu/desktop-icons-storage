@@ -88,7 +88,7 @@ DesktopIconsStorage 的“收纳”是实际文件移动，不是数据库索引
 
 升级时仅复制旧配置文件。已有 `settings.json` 中的 `storageRoot` 保持原值，因此不会自动移动用户收纳文件。
 
-开发和自动化测试可以为单个进程设置可选环境变量 `DESKTOPICONSSTORAGE_CONFIG_DIR`，把配置重定向到隔离目录。正式运行不需要也不应设置该变量。
+开发界面验证统一使用 `scripts/run-test-sandbox.ps1`。脚本设置 `DESKTOPICONSSTORAGE_TEST_ROOT`，把桌面、收纳目录、配置、实例锁和构建产物隔离到 `artifacts/test-sandbox`；测试模式拒绝沙盒外输入，也不写开机自启注册表。正式运行不设置该变量。`DESKTOPICONSSTORAGE_CONFIG_DIR` 仍可用于一般配置重定向，但不能代替完整的桌面文件隔离。
 
 ### 4.1 settings.json
 
@@ -106,7 +106,7 @@ DesktopIconsStorage 的“收纳”是实际文件移动，不是数据库索引
 
 ### 4.2 layout.json
 
-每个收纳盒保存 ID、名称、文件夹路径、坐标、宽高、折叠状态、名称显示覆盖以及手动图标顺序。坐标和尺寸按物理像素保存。
+每个收纳盒保存 ID、名称、固定模式（`move`/`link`）、文件夹路径、坐标、宽高、名称显示覆盖以及手动图标顺序。链接筐另保存预览行列规格；旧布局缺少模式时按实体盒读取。坐标和尺寸按物理像素保存。
 
 ### 4.3 文件冲突
 
@@ -134,6 +134,7 @@ DesktopIconsStorage 的“收纳”是实际文件移动，不是数据库索引
 - 收纳盒内部拖放附加自定义数据格式，用于区分排序和真实文件移动。
 - 文件夹单元格中央区域表示移入子文件夹，操作前必须二次确认。
 - 图标顺序保存文件名而不是完整路径，避免收纳盒重命名后失效。
+- 链接筐拖放和粘贴走同一入口，只创建或复制 `.lnk`，不能调用真实文件移动；展开窗口不提供移入图标中央的文件夹热区。
 
 ### 5.4 Shell 通知
 
@@ -203,34 +204,38 @@ artifacts/
 
 ### 7.3 GitHub Release
 
-推送语义化版本标签会触发 `.github/workflows/release.yml`：
+功能合并到 `main` 后，才从已合并的提交创建语义化版本标签。`.github/workflows/release.yml` 和发布脚本都会检查提交是否已进入主分支：
 
 ```powershell
 git tag -a v0.4.0 -m "DesktopIconsStorage 0.4.0"
 git push origin v0.4.0
 ```
 
-云端会构建安装器、便携版和 SHA256 校验文件，并附加到对应 Release。
+云端会构建安装器、便携版和 SHA256 校验文件，并附加到对应 Release。功能分支可正常推送用于评审，但不创建发布包或 GitHub Release。
 
 ## 8. 卸载清理协议
 
 卸载器默认询问是否还原数据：
 
-- 选择 Yes：调用 `DesktopIconsStorage.exe --uninstall-cleanup`，由应用读取真实配置，将所有可见项目安全移回桌面，然后删除空目录和配置。
+- 选择 Yes：调用 `DesktopIconsStorage.exe --uninstall-cleanup`。实体盒中的真实文件移回桌面；链接筐中的快捷方式删除，原目标不动；随后删除空目录和配置。
 - 选择 No：保留文件和配置，并显示 `storageRoot` 与配置目录。
 - 自动清理不会递归删除未知文件或非空目录。
 - 任何还原失败都会返回非零退出码，卸载器会保留数据并提示手动位置。
 
 ## 9. 测试
 
-当前没有独立自动化测试项目，发布前至少执行以下检查。
+链接筐提供独立烟测；发布前仍需执行以下手工检查。
 
 ### 9.1 构建检查
 
 ```powershell
-dotnet build DesktopIconsStorage.sln
-dotnet build DesktopIconsStorage.sln -c Release
+.\scripts\run-test-sandbox.ps1
+$testBin = Join-Path (Get-Location) 'artifacts\test-sandbox\SmokeBin'
+dotnet build tests\ShortcutBasketSmoke\ShortcutBasketSmoke.csproj "-p:OutputPath=$testBin"
+& (Join-Path $testBin 'ShortcutBasketSmoke.exe')
 ```
+
+测试脚本把 Debug 构建放到独立目录，即使正式应用正在运行，也不会覆盖它占用的 DLL。功能分支不执行发布脚本；合并到 `main` 后才做 Release 构建与安装器检查。
 
 ### 9.2 发布检查
 
@@ -259,6 +264,9 @@ dotnet build DesktopIconsStorage.sln -c Release
 - 移入子文件夹确认与非法嵌套拦截。
 - Explorer 重启后的窗口恢复。
 - 多显示器和不同 DPI。
+- 链接筐小盒只预览图标，默认 2×2；右键规格与居中弹窗双向动画正常。
+- 展开窗口名称开关、深浅主题悬浮提示、快捷方式拖放/粘贴和原文件路径不变。
+- 删除链接筐与卸载时只处理 `.lnk`；功能分支不会触发发布流程。
 
 ## 10. 临时文件与忽略规则
 

@@ -18,7 +18,7 @@ public class BlockManager
 
     public IReadOnlyList<Block> Blocks => _blocks;
 
-    public string DesktopPath => Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+    public string DesktopPath => RuntimePaths.DesktopPath;
 
     // ---------- 持久化 ----------
 
@@ -26,27 +26,43 @@ public class BlockManager
     {
         _blocks.Clear();
         _blocks.AddRange(JsonStore.Load<List<Block>>(JsonStore.LayoutPath));
+        // 测试布局即便被手工改坏，也不能指向沙盒之外的真实桌面目录。
+        foreach (var block in _blocks)
+        {
+            if (!BlockModes.IsValid(block.Mode))
+                throw new IOException($"收纳盒“{block.Name}”使用未知模式，请检查布局配置。");
+            if (block.IsLink) EnsureManagedFolder(block);
+            RuntimePaths.EnsureSandboxPath(block.FolderPath);
+        }
     }
 
     public void Save() => JsonStore.Save(JsonStore.LayoutPath, _blocks.ToList());
 
     // ---------- 块 CRUD ----------
 
-    public Block CreateBlock(double x, double y, string? name = null, double dpiScale = 1.0)
+    public Block CreateBlock(double x, double y, string? name = null, double dpiScale = 1.0,
+        string mode = BlockModes.Move, int previewRows = 2, int previewColumns = 2)
     {
+        if (!BlockModes.IsValid(mode)) throw new IOException("未知的收纳盒模式。");
+        if (previewRows is < 2 or > 4 || previewColumns is < 2 or > 4)
+            throw new IOException("预览行列必须在 2 到 4 之间。");
+        RuntimePaths.EnsureSandboxPath(_settings.StorageRoot);
         Directory.CreateDirectory(_settings.StorageRoot);
-        var blockName = UniqueBlockName(name ?? "新建收纳盒");
+        var blockName = UniqueBlockName(name ?? (mode == BlockModes.Link ? "新建收纳筐" : "新建收纳盒"));
         // 默认尺寸 = 5列×3行图标格（单元格尺寸与 BlockView 一致，物理像素随 DPI 缩放）
         var cellW = _settings.IconSize + 34; // 瓦片 + 左右间距
         var cellH = _settings.ShowIconNames ? _settings.IconSize + 60 : _settings.IconSize + 20;
         var block = new Block
         {
             Name = blockName,
+            Mode = mode,
+            PreviewRows = previewRows,
+            PreviewColumns = previewColumns,
             FolderPath = Path.Combine(_settings.StorageRoot, blockName),
             X = x,
             Y = y,
-            Width = (5 * cellW + 16) * dpiScale,
-            Height = (40 + 3 * cellH + 12) * dpiScale
+            Width = (mode == BlockModes.Link ? previewColumns * 52 + 24 : 5 * cellW + 16) * dpiScale,
+            Height = (mode == BlockModes.Link ? previewRows * 52 + 55 : 40 + 3 * cellH + 12) * dpiScale
         };
         Directory.CreateDirectory(block.FolderPath);
         _blocks.Add(block);
@@ -56,11 +72,13 @@ public class BlockManager
 
     public void RenameBlock(Block block, string newName)
     {
+        RuntimePaths.EnsureSandboxPath(block.FolderPath);
         newName = newName.Trim();
         if (newName.Length == 0 || newName == block.Name) return;
         ValidateFolderName(newName);
 
         var newPath = Path.Combine(_settings.StorageRoot, newName);
+        RuntimePaths.EnsureSandboxPath(newPath);
         if (!string.Equals(block.FolderPath, newPath, StringComparison.OrdinalIgnoreCase))
         {
             if (Directory.Exists(newPath))
@@ -79,6 +97,10 @@ public class BlockManager
     /// </summary>
     public void DeleteBlock(Block block, Block? moveContentsTo)
     {
+        RuntimePaths.EnsureSandboxPath(block.FolderPath);
+        if (block.IsLink) throw new IOException("快捷方式收纳筐必须使用链接筐删除流程。");
+        if (moveContentsTo?.IsLink == true)
+            throw new IOException("实体盒删除时不能把真实文件直接移入链接筐。");
         if (Directory.Exists(block.FolderPath))
         {
             foreach (var item in EnumerateItems(block))
@@ -98,6 +120,76 @@ public class BlockManager
     {
         try { Directory.Delete(path, recursive: false); }
         catch { /* 仍有隐藏文件等残留时保留文件夹，不阻塞删除块 */ }
+    }
+
+    /// <summary>读取链接筐受管理的快捷方式；未知内容必须保留，阻止整筐删除。</summary>
+    public IReadOnlyList<string> GetValidatedLinkFiles(Block block)
+    {
+        if (!block.IsLink) throw new IOException("目标不是快捷方式收纳筐。");
+        EnsureManagedFolder(block);
+        if (!Directory.Exists(block.FolderPath)) return Array.Empty<string>();
+        RuntimePaths.EnsureSandboxPath(block.FolderPath);
+        var result = new List<string>();
+        foreach (var path in Directory.EnumerateFileSystemEntries(block.FolderPath))
+        {
+            if (!File.Exists(path) ||
+                !Path.GetExtension(path).Equals(".lnk", StringComparison.OrdinalIgnoreCase) ||
+                File.GetAttributes(path).HasFlag(FileAttributes.Hidden) ||
+                File.GetAttributes(path).HasFlag(FileAttributes.System))
+                throw new IOException($"收纳筐含未知内容，请先检查：{path}");
+            result.Add(path);
+        }
+        return result;
+    }
+
+    /// <summary>快捷方式已清空后删除空目录与布局记录；失败时保持模型不变。</summary>
+    public void RemoveEmptyLinkBlock(Block block)
+    {
+        if (!block.IsLink) throw new IOException("目标不是快捷方式收纳筐。");
+        GetValidatedLinkFiles(block);
+        if (Directory.Exists(block.FolderPath))
+        {
+            if (Directory.EnumerateFileSystemEntries(block.FolderPath).Any())
+                throw new IOException("收纳筐内仍有快捷方式，不能删除。");
+            Directory.Delete(block.FolderPath);
+        }
+        _blocks.Remove(block);
+        Save();
+    }
+
+    /// <summary>删除链接筐时只搬迁 .lnk 本身，目标盒的模式保持不变。</summary>
+    public void TransferLinkBlock(Block block, Block target)
+    {
+        if (!block.IsLink || block == target)
+            throw new IOException("请选择其他收纳盒作为目标。");
+        var files = GetValidatedLinkFiles(block);
+        EnsureManagedFolder(target);
+        RuntimePaths.EnsureSandboxPath(target.FolderPath);
+        Directory.CreateDirectory(target.FolderPath);
+        foreach (var file in files)
+        {
+            var destination = UniqueDestination(target.FolderPath, Path.GetFileName(file));
+            MoveEntry(file, destination);
+        }
+        RemoveEmptyLinkBlock(block);
+    }
+
+    /// <summary>卸载时永久删除链接筐中的 .lnk，不将快捷图标移到桌面。</summary>
+    public void DeleteLinkFilesForUninstall(Block block)
+    {
+        foreach (var file in GetValidatedLinkFiles(block)) File.Delete(file);
+    }
+
+    /// <summary>只能清理收纳根目录的直接子目录，防止异常布局误删其他位置的文件。</summary>
+    private void EnsureManagedFolder(Block block)
+    {
+        var root = Path.GetFullPath(_settings.StorageRoot).TrimEnd(
+            Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var folder = Path.GetFullPath(block.FolderPath).TrimEnd(
+            Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (!string.Equals(Path.GetDirectoryName(folder), root,
+                StringComparison.OrdinalIgnoreCase))
+            throw new IOException($"收纳盒目录不在受管理的收纳根目录内：{folder}");
     }
 
     // ---------- 图标移动 ----------
@@ -148,6 +240,8 @@ public class BlockManager
     /// <summary>把若干文件/文件夹移动进块（桌面图标随之消失）。</summary>
     public List<string> MoveInto(Block block, IEnumerable<string> paths)
     {
+        if (block.IsLink) throw new IOException("不能向快捷方式收纳筐移动真实文件。");
+        RuntimePaths.EnsureSandboxPath(block.FolderPath);
         var moved = new List<string>();
         Directory.CreateDirectory(block.FolderPath);
         foreach (var src in paths)
@@ -198,6 +292,7 @@ public class BlockManager
     /// <summary>把一个条目移回桌面。</summary>
     public string MoveToDesktop(string sourcePath)
     {
+        RuntimePaths.EnsureSandboxPath(sourcePath);
         var dest = UniqueDestination(DesktopPath, Path.GetFileName(sourcePath));
         MoveEntry(sourcePath, dest);
         return dest;
@@ -206,12 +301,15 @@ public class BlockManager
     /// <summary>把若干文件/文件夹复制进块（用于 Ctrl+V 复制语义）。</summary>
     public List<string> CopyInto(Block block, IEnumerable<string> paths)
     {
+        if (block.IsLink) throw new IOException("快捷方式收纳筐只接受快捷方式引用。");
+        RuntimePaths.EnsureSandboxPath(block.FolderPath);
         var copied = new List<string>();
         Directory.CreateDirectory(block.FolderPath);
         foreach (var src in paths)
         {
             if (string.IsNullOrWhiteSpace(src)) continue;
             if (!File.Exists(src) && !Directory.Exists(src)) continue;
+            RuntimePaths.EnsureSandboxPath(src);
             var dest = UniqueDestination(block.FolderPath, Path.GetFileName(src));
             if (File.Exists(src)) File.Copy(src, dest);
             else CopyDirectory(src, dest);
@@ -226,6 +324,7 @@ public class BlockManager
         var count = 0;
         foreach (var block in _blocks.ToList())
         {
+            if (block.IsLink) continue;
             if (!Directory.Exists(block.FolderPath)) continue;
             foreach (var item in EnumerateItems(block))
             {
@@ -240,6 +339,8 @@ public class BlockManager
 
     private static void MoveEntry(string src, string dest)
     {
+        RuntimePaths.EnsureSandboxPath(src);
+        RuntimePaths.EnsureSandboxPath(dest);
         var sameVolume = string.Equals(
             Path.GetPathRoot(Path.GetFullPath(src)),
             Path.GetPathRoot(Path.GetFullPath(dest)),

@@ -1,0 +1,42 @@
+<Window x:Class="DesktopIconsStorage.App.Views.CreateBlockDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="新建收纳盒" Width="440" SizeToContent="Height"
+        WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
+        Background="{DynamicResource WindowBg}" Foreground="{DynamicResource TextPrimary}"
+        FontFamily="Segoe UI Variable Text, Microsoft YaHei UI" FontSize="13">
+    <StackPanel Margin="24">
+        <!-- 名称与固定模式选择区。 -->
+        <TextBlock Text="名称" Margin="0,0,0,6"/>
+        <TextBox x:Name="NameBox" Padding="8,6" Margin="0,0,0,18" Text="新建收纳盒"/>
+        <TextBlock Text="收纳模式" FontWeight="SemiBold" Margin="0,0,0,10"/>
+        <RadioButton x:Name="MoveMode" Content="实体收纳盒：拖入时移动真实文件"
+                     IsChecked="True" GroupName="Mode" Margin="0,0,0,9"/>
+        <RadioButton x:Name="LinkMode" Content="快捷方式收纳筐：原文件保持原位"
+                     GroupName="Mode" Margin="0,0,0,14"/>
+        <TextBlock Text="模式创建后不可切换。" Foreground="{DynamicResource TextSecondary}"
+                   FontSize="12" Margin="0,0,0,16"/>
+        <!-- 预览规格只属于快捷方式收纳筐。 -->
+        <StackPanel x:Name="PreviewOptions" Visibility="Collapsed">
+            <TextBlock Text="小盒预览规格" Margin="0,0,0,8"/>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+                <ComboBox x:Name="RowsBox" Width="70" SelectedIndex="0">
+                    <ComboBoxItem Content="2 行" Tag="2"/>
+                    <ComboBoxItem Content="3 行" Tag="3"/>
+                    <ComboBoxItem Content="4 行" Tag="4"/>
+                </ComboBox>
+                <TextBlock Text="×" VerticalAlignment="Center" Margin="10,0"/>
+                <ComboBox x:Name="ColumnsBox" Width="70" SelectedIndex="0">
+                    <ComboBoxItem Content="2 列" Tag="2"/>
+                    <ComboBoxItem Content="3 列" Tag="3"/>
+                    <ComboBoxItem Content="4 列" Tag="4"/>
+                </ComboBox>
+            </StackPanel>
+        </StackPanel>
+        <!-- 提交区。 -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="取消" Width="84" Margin="0,0,10,0" Click="OnCancel"/>
+            <Button Content="创建" Width="84" Click="OnCreate"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

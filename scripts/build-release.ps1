@@ -17,6 +17,21 @@ $releaseDir = [System.IO.Path]::GetFullPath((Join-Path $artifactsRoot "release")
 $installerOutputDir = [System.IO.Path]::GetFullPath((Join-Path $artifactsRoot "installer"))
 $installerScript = Join-Path $repoRoot "build\installer\DesktopIconsStorage.iss"
 
+# 功能分支仅做 Debug/烟测；安装包与便携版只能从 main 或已合并到 main 的标签构建。
+$branchOutput = & git -C $repoRoot branch --show-current
+if ($LASTEXITCODE -ne 0) { throw "无法确认发布来源分支。" }
+$currentBranch = if ($null -eq $branchOutput) { "" } else { [string]$branchOutput }
+$currentBranch = $currentBranch.Trim()
+if ($currentBranch -ne "main") {
+    if ($currentBranch -ne "") {
+        throw "仅允许在 main 分支构建发布包；当前分支：$currentBranch"
+    }
+    & git -C $repoRoot merge-base --is-ancestor HEAD origin/main
+    if ($LASTEXITCODE -ne 0) {
+        throw "当前标签提交尚未合并到 main，不能构建发布包。"
+    }
+}
+
 if ([string]::IsNullOrWhiteSpace($Version)) {
     [xml]$projectXml = Get-Content -LiteralPath $projectPath -Raw
     $versionNode = $projectXml.Project.PropertyGroup |

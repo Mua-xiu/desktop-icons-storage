@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 
 namespace DesktopIconsStorage.Core.Models;
 
@@ -14,6 +15,16 @@ public class Block : INotifyPropertyChanged
     private double _x, _y, _width = 372, _height = 300;
 
     public Guid Id { get; set; } = Guid.NewGuid();
+
+    /// <summary>创建时固定的收纳语义；旧布局缺失此字段时仍按实体盒处理。</summary>
+    public string Mode { get; set; } = BlockModes.Move;
+
+    /// <summary>链接筐预览网格行列，创建后只能通过右键菜单修改。</summary>
+    public int PreviewRows { get; set; } = 2;
+    public int PreviewColumns { get; set; } = 2;
+
+    [JsonIgnore]
+    public bool IsLink => Mode == BlockModes.Link;
 
     public string Name
     {
@@ -49,4 +60,13 @@ public class Block : INotifyPropertyChanged
         field = value;
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
+}
+
+/// <summary>两种收纳盒模式的持久化取值。</summary>
+public static class BlockModes
+{
+    public const string Move = "move";
+    public const string Link = "link";
+
+    public static bool IsValid(string? mode) => mode is Move or Link;
 }

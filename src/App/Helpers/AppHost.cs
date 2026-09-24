@@ -49,6 +49,9 @@ public class AppHost : IDisposable
 
             Log("Run: loading settings");
             Settings = JsonStore.Load<AppSettings>(JsonStore.SettingsPath);
+            // 测试运行强制使用隔离目录，防止旧设置指向真实收纳数据。
+            if (RuntimePaths.SandboxStorageRoot is { } sandboxStorage)
+                Settings.StorageRoot = sandboxStorage;
             ThemeResourceManager.Apply(ThemePalette, AccentColor);
             AutostartService.RecordStorageRoot(Settings.StorageRoot);
             Blocks = new BlockManager(Settings);
@@ -104,6 +107,11 @@ public class AppHost : IDisposable
 
     private void CreateWindow(Block block)
     {
+        if (!BlockModes.IsValid(block.Mode))
+        {
+            Log($"未知收纳盒模式，跳过窗口：{block.Name}");
+            return;
+        }
         NormalizeBlockBounds(block);
         var w = new BlockWindow(this, block);
         Windows.Add(w);
@@ -129,11 +137,18 @@ public class AppHost : IDisposable
 
     public void NewBlock()
     {
+        var dialog = new CreateBlockDialog(IsDarkTheme);
+        if (dialog.ShowDialog() != true) return;
         var offset = (int)(40 * DpiHelper.SystemScale) * (Windows.Count % 8);
-        var block = Blocks.CreateBlock(FirstBlockX() + offset, FirstBlockY() + offset,
-            dpiScale: DpiHelper.SystemScale);
-        CreateWindow(block);
-        Blocks.Save();
+        try
+        {
+            var block = Blocks.CreateBlock(FirstBlockX() + offset, FirstBlockY() + offset,
+                dialog.BlockName, DpiHelper.SystemScale, dialog.Mode,
+                dialog.PreviewRows, dialog.PreviewColumns);
+            CreateWindow(block);
+            Blocks.Save();
+        }
+        catch (Exception ex) { NotifyError($"创建收纳盒失败：{ex.Message}"); }
     }
 
     private static int FirstBlockX()
@@ -155,6 +170,21 @@ public class AppHost : IDisposable
         if (area.W <= 0 || area.H <= 0) return;
 
         var s = DpiHelper.SystemScale;
+        if (b.IsLink)
+        {
+            // 链接筐尺寸只由持久化行列规格决定，旧版八向缩放不能改变小盒。
+            b.Collapsed = false;
+            b.PreviewRows = Math.Clamp(b.PreviewRows, 2, 4);
+            b.PreviewColumns = Math.Clamp(b.PreviewColumns, 2, 4);
+            b.Width = (b.PreviewColumns * 52 + 24) * s;
+            b.Height = (b.PreviewRows * 52 + 55) * s;
+            var margin = Math.Max(12 * s, 12);
+            b.X = Math.Clamp(b.X, area.X + margin,
+                Math.Max(area.X + margin, area.X + area.W - b.Width - margin));
+            b.Y = Math.Clamp(b.Y, area.Y + margin,
+                Math.Max(area.Y + margin, area.Y + area.H - b.Height - margin));
+            return;
+        }
         var showNames = b.ShowIconNames ?? Settings.ShowIconNames;
         var cellW = Settings.IconSize + 34;
         var cellH = showNames ? Settings.IconSize + 60 : Settings.IconSize + 20;
@@ -204,6 +234,14 @@ public class AppHost : IDisposable
 
     public void MoveIntoBlock(BlockWindow w, IEnumerable<string> paths)
     {
+        if (w.Block.IsLink)
+        {
+            var result = LinkBasketService.Add(w.Block, paths);
+            if (result.Errors.Count > 0)
+                NotifyError($"添加快捷方式时有 {result.Errors.Count} 项失败：{result.Errors[0]}");
+            w.RefreshViewAfterInternalChange();
+            return;
+        }
         try
         {
             var srcList = paths
@@ -260,28 +298,58 @@ public class AppHost : IDisposable
     public void SetItemOrder(BlockWindow w, IEnumerable<string> fullPaths) =>
         Blocks.SetItemOrder(w.Block, fullPaths.Select(Path.GetFileName).OfType<string>());
 
+    /// <summary>通过小盒右键菜单修改预览规格，保持尺寸与布局数据一致。</summary>
+    public void SetLinkPreviewSize(BlockWindow w, int rows, int columns)
+    {
+        if (!w.Block.IsLink || rows is < 2 or > 4 || columns is < 2 or > 4) return;
+        w.SetLinkPreviewSize(rows, columns);
+    }
+
     public void RequestDeleteBlock(BlockWindow w)
     {
-        var others = Blocks.Blocks.Where(b => b != w.Block).ToList();
+        var others = Blocks.Blocks.Where(b => b != w.Block &&
+            (w.Block.IsLink || !b.IsLink)).ToList();
         var dlg = new DeleteBlockDialog(this, w.Block, others);
         if (dlg.ShowDialog() != true) return;
+        if (dlg.Choice == DeleteBlockDialog.DeleteChoice.MoveToOtherBlock &&
+            dlg.TargetBlock == null)
+        {
+            NotifyError("请选择要接收快捷方式的收纳盒。");
+            return;
+        }
 
+        var deleted = false;
         try
         {
-            var items = Blocks.EnumerateItems(w.Block).Select(i => i.FullPath).ToList();
-            if (dlg.Choice == DeleteBlockDialog.DeleteChoice.MoveToOtherBlock && dlg.TargetBlock != null)
+            if (w.Block.IsLink)
             {
-                Blocks.DeleteBlock(w.Block, dlg.TargetBlock);
-                // 块间移动与桌面图标无关，文件夹监听会自动刷新两个块的视图
+                if (dlg.Choice == DeleteBlockDialog.DeleteChoice.MoveToOtherBlock &&
+                    dlg.TargetBlock != null)
+                    Blocks.TransferLinkBlock(w.Block, dlg.TargetBlock);
+                else
+                {
+                    var links = Blocks.GetValidatedLinkFiles(w.Block);
+                    if (!ShellFileService.RecycleDelete(w.Hwnd, links))
+                        throw new IOException("快捷方式未能全部移入回收站。");
+                    Blocks.RemoveEmptyLinkBlock(w.Block);
+                }
             }
             else
             {
-                // 移回桌面并删除块文件夹
-                Blocks.DeleteBlock(w.Block, null);
-                ShellNotifyService.NotifyFolderChanged(Blocks.DesktopPath);
+                if (dlg.Choice == DeleteBlockDialog.DeleteChoice.MoveToOtherBlock &&
+                    dlg.TargetBlock != null)
+                    Blocks.DeleteBlock(w.Block, dlg.TargetBlock);
+                else
+                {
+                    Blocks.DeleteBlock(w.Block, null);
+                    ShellNotifyService.NotifyFolderChanged(Blocks.DesktopPath);
+                }
             }
+            deleted = true;
         }
         catch (Exception ex) { NotifyError($"删除失败：{ex.Message}"); }
+
+        if (!deleted) return;
 
         Windows.Remove(w);
         w.Dispose();
@@ -291,13 +359,24 @@ public class AppHost : IDisposable
 
     public void RestoreAllWithConfirm()
     {
+        var linkCount = Blocks.Blocks.Where(b => b.IsLink)
+            .Sum(b => Blocks.EnumerateItems(b).Count);
+        var moveCount = Blocks.Blocks.Where(b => !b.IsLink)
+            .Sum(b => Blocks.EnumerateItems(b).Count);
         var result = MessageBox.Show(
-            "将所有收纳盒中的文件移回桌面？\n（块会保留，内容清空）",
+            $"实体盒 {moveCount} 项移回桌面；链接筐 {linkCount} 个快捷方式移入回收站。\n" +
+            "快捷方式目标保持原位，收纳盒会保留。是否继续？",
             "一键全部还原", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (result != MessageBoxResult.Yes) return;
 
         try
         {
+            foreach (var block in Blocks.Blocks.Where(b => b.IsLink))
+            {
+                var links = Blocks.GetValidatedLinkFiles(block);
+                if (!ShellFileService.RecycleDelete(IntPtr.Zero, links))
+                    throw new IOException($"清空链接筐失败：{block.Name}");
+            }
             Blocks.RestoreAllToDesktop();
             // 通知 Shell 刷新桌面与所有块文件夹
             ShellNotifyService.NotifyFolderChanged(Blocks.DesktopPath);
@@ -378,11 +457,15 @@ public class AppHost : IDisposable
         {
             JsonStore.MigrateLegacyFiles();
             var settings = JsonStore.Load<AppSettings>(JsonStore.SettingsPath);
+            if (RuntimePaths.SandboxStorageRoot is { } sandboxStorage)
+                settings.StorageRoot = sandboxStorage;
             var manager = new BlockManager(settings);
             manager.Load();
             var blockFolders = manager.Blocks.Select(block => block.FolderPath).ToList();
 
             manager.RestoreAllToDesktop();
+            foreach (var block in manager.Blocks.Where(b => b.IsLink))
+                manager.DeleteLinkFilesForUninstall(block);
             ShellNotifyService.NotifyFolderChanged(manager.DesktopPath);
 
             foreach (var folder in blockFolders)
@@ -406,6 +489,7 @@ public class AppHost : IDisposable
     /// <summary>只删除确认为空的目录，绝不递归清除未知或隐藏的用户文件。</summary>
     private static void DeleteDirectoryIfEmpty(string path)
     {
+        RuntimePaths.EnsureSandboxPath(path);
         if (!Directory.Exists(path)) return;
         if (!Directory.EnumerateFileSystemEntries(path).Any())
             Directory.Delete(path, recursive: false);

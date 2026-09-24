@@ -1,0 +1,33 @@
+<UserControl x:Class="DesktopIconsStorage.App.Views.LinkBasketTileView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FontFamily="Segoe UI Variable Text, Microsoft YaHei UI" FontSize="12">
+    <!-- 小盒预览区：所有图标均为只读图像，整个区域只负责打开内容窗口。 -->
+    <Border x:Name="TileBorder" CornerRadius="12" BorderThickness="1"
+            Background="Transparent" BorderBrush="#70FFFFFF">
+        <Grid x:Name="TileRoot" AllowDrop="True">
+            <Border x:Name="TintLayer" CornerRadius="12" Background="#1A202020"/>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="30"/>
+                </Grid.RowDefinitions>
+                <UniformGrid x:Name="PreviewGrid" Grid.Row="0" Margin="10,8,10,0"
+                             IsHitTestVisible="False"/>
+                <!-- 标题区：只显示收纳筐名称，不能显示预览项目名称。 -->
+                <Grid x:Name="TitleArea" Grid.Row="1" Margin="8,0,8,3">
+                    <TextBlock x:Name="TitleText" VerticalAlignment="Center"
+                               HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"
+                               Foreground="White" FontWeight="SemiBold"/>
+                    <TextBox x:Name="TitleEditor" Visibility="Collapsed" VerticalAlignment="Center"
+                             HorizontalAlignment="Stretch" FontSize="11"/>
+                </Grid>
+            </Grid>
+            <Border x:Name="MoreBadge" HorizontalAlignment="Right" VerticalAlignment="Top"
+                    Margin="0,5,5,0" Padding="5,1" CornerRadius="8"
+                    Background="#99000000" Visibility="Collapsed" IsHitTestVisible="False">
+                <TextBlock x:Name="MoreCount" Foreground="White" FontSize="10"/>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

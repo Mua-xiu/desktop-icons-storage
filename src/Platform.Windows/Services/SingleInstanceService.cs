@@ -1,10 +1,18 @@
+using System.Security.Cryptography;
+using System.Text;
+using DesktopIconsStorage.Core.Services;
+
 namespace DesktopIconsStorage.Platform.Services;
 
 /// <summary>单实例：命名 Mutex + 命名事件（二次启动时唤醒已有实例）。</summary>
 public sealed class SingleInstanceService : IDisposable
 {
-    private const string MutexName = @"Local\DesktopIconsStorage.SingleInstance";
-    private const string WakeupEventName = @"Local\DesktopIconsStorage.Wakeup";
+    private static string InstanceSuffix => RuntimePaths.SandboxRoot is { } root
+        ? ".Test." + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(root)))[..12]
+        : "";
+
+    private static string MutexName => @"Local\DesktopIconsStorage.SingleInstance" + InstanceSuffix;
+    private static string WakeupEventName => @"Local\DesktopIconsStorage.Wakeup" + InstanceSuffix;
 
     private Mutex? _mutex;
     private EventWaitHandle? _wakeup;
