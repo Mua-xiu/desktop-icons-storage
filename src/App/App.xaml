@@ -19,6 +19,27 @@
         <SolidColorBrush x:Key="PopupBg" Color="#FF2B2B2B"/>
         <SolidColorBrush x:Key="Accent" Color="#FF3D9BFF"/>
 
+        <!-- 全局开关模板：设置窗口与链接筐弹窗共用相同交互外观。 -->
+        <Style x:Key="Switch" TargetType="CheckBox">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Grid Width="36" Height="20">
+                            <Border x:Name="Track" CornerRadius="10" Background="{DynamicResource TrackOff}"/>
+                            <Border x:Name="Knob" CornerRadius="8" Width="16" Height="16"
+                                    Background="White" HorizontalAlignment="Left" Margin="2,0"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Track" Property="Background" Value="{DynamicResource Accent}"/>
+                                <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- 全局深浅主题下拉框：设置窗口与删除窗口共用同一套模板。 -->
         <Style TargetType="ComboBox">
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>

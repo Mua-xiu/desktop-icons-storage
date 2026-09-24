@@ -18,7 +18,9 @@ public partial class LinkBasketTileView : UserControl
     private readonly BlockWindow _window;
     private readonly AppHost _host;
     private Point _dragStart;
-    private bool _dragging;
+    private double _windowStartX;
+    private double _windowStartY;
+    private bool _pointerDown;
     private bool _moved;
 
     public LinkBasketTileView(BlockWindow window, AppHost host)
@@ -26,11 +28,13 @@ public partial class LinkBasketTileView : UserControl
         InitializeComponent();
         _window = window;
         _host = host;
-        TileRoot.MouseLeftButtonUp += OnClick;
+        TileRoot.PreviewMouseLeftButtonDown += OnPointerDown;
+        TileRoot.PreviewMouseMove += OnPointerMove;
+        TileRoot.PreviewMouseLeftButtonUp += OnPointerUp;
+        TileRoot.LostMouseCapture += (_, _) => _pointerDown = false;
         TileRoot.MouseRightButtonUp += OnRightClick;
         TileRoot.DragOver += OnDragOver;
         TileRoot.Drop += OnDrop;
-        TitleArea.MouseLeftButtonDown += OnTitleDown;
         TitleEditor.KeyDown += OnEditorKeyDown;
         TitleEditor.LostFocus += (_, _) => CommitRename();
         RefreshItems();
@@ -101,49 +105,39 @@ public partial class LinkBasketTileView : UserControl
             Color.FromArgb(110, 255, 255, 255));
     }
 
-    private void OnClick(object sender, MouseButtonEventArgs e)
+    /// <summary>整个小盒都是拖动热区；按下位置与窗口位置一起记录，避免移动时累积误差。</summary>
+    private void OnPointerDown(object sender, MouseButtonEventArgs e)
     {
-        if (_dragging || _moved || TitleEditor.Visibility == Visibility.Visible)
-        {
-            _moved = false;
-            return;
-        }
-        _window.OpenLinkPopup();
-        e.Handled = true;
-    }
-
-    private void OnTitleDown(object sender, MouseButtonEventArgs e)
-    {
-        if (e.ClickCount > 1 || TitleEditor.Visibility == Visibility.Visible) return;
+        if (TitleEditor.Visibility == Visibility.Visible) return;
         _dragStart = PointToScreen(e.GetPosition(this));
-        _dragging = true;
+        _windowStartX = _window.Block.X;
+        _windowStartY = _window.Block.Y;
+        _pointerDown = true;
         _moved = false;
-        TitleArea.CaptureMouse();
-        TitleArea.MouseMove += OnTitleMove;
-        TitleArea.MouseLeftButtonUp += OnTitleUp;
+        TileRoot.CaptureMouse();
         e.Handled = true;
     }
 
-    private void OnTitleMove(object sender, MouseEventArgs e)
+    private void OnPointerMove(object sender, MouseEventArgs e)
     {
-        if (!_dragging) return;
+        if (!_pointerDown || e.LeftButton != MouseButtonState.Pressed) return;
         var position = PointToScreen(e.GetPosition(this));
         var dx = position.X - _dragStart.X;
         var dy = position.Y - _dragStart.Y;
-        if (Math.Abs(dx) + Math.Abs(dy) < 3) return;
-        _window.SetPositionScreen((int)(_window.Block.X + dx), (int)(_window.Block.Y + dy));
-        _dragStart = position;
+        if (!_moved && Math.Abs(dx) + Math.Abs(dy) < 5) return;
         _moved = true;
+        _window.SetPositionScreen((int)Math.Round(_windowStartX + dx),
+            (int)Math.Round(_windowStartY + dy));
+        e.Handled = true;
     }
 
-    private void OnTitleUp(object sender, MouseButtonEventArgs e)
+    private void OnPointerUp(object sender, MouseButtonEventArgs e)
     {
-        _dragging = false;
-        TitleArea.ReleaseMouseCapture();
-        TitleArea.MouseMove -= OnTitleMove;
-        TitleArea.MouseLeftButtonUp -= OnTitleUp;
-        _host.PersistLayout();
-        if (!_moved) _window.OpenLinkPopup();
+        if (!_pointerDown) return;
+        _pointerDown = false;
+        TileRoot.ReleaseMouseCapture();
+        if (_moved) _host.PersistLayout();
+        else _window.OpenLinkPopup();
         e.Handled = true;
     }
 

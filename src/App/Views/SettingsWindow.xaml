@@ -63,27 +63,6 @@
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         </Style>
 
-        <!-- iOS 风格开关 -->
-        <Style x:Key="Switch" TargetType="CheckBox">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="CheckBox">
-                        <Grid Width="36" Height="20">
-                            <Border x:Name="Track" CornerRadius="10" Background="{DynamicResource TrackOff}"/>
-                            <Border x:Name="Knob" CornerRadius="8" Width="16" Height="16"
-                                    Background="White" HorizontalAlignment="Left" Margin="2,0"/>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Track" Property="Background" Value="{StaticResource Accent}"/>
-                                <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
         <!-- 滑块：细轨 + 主题色圆点 -->
         <Style TargetType="Slider">
             <Setter Property="Template">

@@ -46,7 +46,6 @@ public partial class LinkBasketPopupView : UserControl
         _popup = popup;
         _host = host;
         IconList.ItemsSource = Items;
-        CloseButton.Click += (_, _) => _popup.CloseAnimated();
         NamesToggle.Checked += (_, _) => SetShowNames(true);
         NamesToggle.Unchecked += (_, _) => SetShowNames(false);
         IconList.PreviewMouseLeftButtonUp += OnOpenItem;
@@ -110,7 +109,6 @@ public partial class LinkBasketPopupView : UserControl
                 palette.WindowBackground.G, palette.WindowBackground.B));
         TitleText.Foreground = new SolidColorBrush(palette.TextPrimary);
         IconList.Foreground = new SolidColorBrush(palette.TextPrimary);
-        NamesToggle.Foreground = new SolidColorBrush(palette.TextPrimary);
         RootBorder.BorderBrush = new SolidColorBrush(dark
             ? Color.FromArgb(105, 255, 255, 255)
             : Color.FromArgb(95, 0, 0, 0));
@@ -118,10 +116,11 @@ public partial class LinkBasketPopupView : UserControl
 
     private void SetShowNames(bool show)
     {
-        if (_tile.Block.ShowIconNames == show) return;
-        _tile.Block.ShowIconNames = show;
+        // 每次打开弹窗都要根据已保存状态重建可见性，不能只在状态发生变化时设置。
         NamesVisibility = show ? Visibility.Visible : Visibility.Collapsed;
         NamesHidden = !show;
+        if (_tile.Block.ShowIconNames == show) return;
+        _tile.Block.ShowIconNames = show;
         _host.PersistLayout();
     }
 

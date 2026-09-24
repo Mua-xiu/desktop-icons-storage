@@ -40,8 +40,9 @@ public sealed class LinkBasketPopupWindow : IDisposable
         var area = DesktopEmbedService.GetNearestMonitorWorkArea(
             _start.X, _start.Y, _start.W, _start.H);
         var scale = DpiHelper.WindowScale(tile.Hwnd);
-        var width = Math.Min((int)(620 * scale), Math.Max(_start.W, area.W - 40));
-        var height = Math.Min((int)(440 * scale), Math.Max(_start.H, area.H - 40));
+        // 大窗口增加可见图标容量，同时仍限制在所属显示器的工作区内。
+        var width = Math.Min((int)(780 * scale), Math.Max(_start.W, area.W - 40));
+        var height = Math.Min((int)(560 * scale), Math.Max(_start.H, area.H - 40));
         _finish = (area.X + (area.W - width) / 2,
             area.Y + (area.H - height) / 2, width, height);
     }

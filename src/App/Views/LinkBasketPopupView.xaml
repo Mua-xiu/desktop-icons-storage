@@ -16,14 +16,17 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock x:Name="TitleText" VerticalAlignment="Center" FontSize="18"
                                FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                    <CheckBox x:Name="NamesToggle" Grid.Column="1" Content="显示名称"
-                              VerticalAlignment="Center" Margin="16,0"/>
-                    <Button x:Name="CloseButton" Grid.Column="2" Content="✕" Width="32" Height="32"
-                            VerticalAlignment="Center" Cursor="Hand"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"
+                                Margin="16,0,4,0">
+                        <TextBlock Text="显示名称" VerticalAlignment="Center" Margin="0,0,10,0"
+                                   Foreground="{DynamicResource TextPrimary}"/>
+                        <CheckBox x:Name="NamesToggle" Style="{StaticResource Switch}"
+                                  VerticalAlignment="Center" Cursor="Hand"
+                                  AutomationProperties.Name="显示名称"/>
+                    </StackPanel>
                 </Grid>
                 <!-- 快捷方式列表：关闭名称时使用随主题变化的完整名称提示。 -->
                 <ListBox x:Name="IconList" Grid.Row="1" Margin="10,0,10,12"
