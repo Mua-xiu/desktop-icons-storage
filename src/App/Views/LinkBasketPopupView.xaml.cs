@@ -8,6 +8,7 @@ using System.Windows.Media.Animation;
 using DesktopIconsStorage.App.Helpers;
 using DesktopIconsStorage.Core.Models;
 using DesktopIconsStorage.Platform.Services;
+using Button = System.Windows.Controls.Button;
 
 namespace DesktopIconsStorage.App.Views;
 
@@ -19,7 +20,10 @@ public partial class LinkBasketPopupView : UserControl
     private readonly LinkBasketPopupWindow _popup;
     private readonly AppHost _host;
     private readonly ScaleTransform _transitionScale = new();
+    private readonly List<IconGridItem> _allItems = new();
     private Point _dragStart;
+    private int _pageSize = 32;
+    private int _currentPage;
 
     public BlockItemsCollection Items { get; } = new();
 
@@ -48,6 +52,8 @@ public partial class LinkBasketPopupView : UserControl
         _popup = popup;
         _host = host;
         IconList.ItemsSource = Items;
+        IconList.SizeChanged += (_, _) => UpdatePageCapacity();
+        Loaded += (_, _) => UpdatePageCapacity();
         NamesToggle.Checked += (_, _) => SetShowNames(true);
         NamesToggle.Unchecked += (_, _) => SetShowNames(false);
         IconList.PreviewMouseLeftButtonUp += OnOpenItem;
@@ -103,7 +109,7 @@ public partial class LinkBasketPopupView : UserControl
         IReadOnlyList<IconItem> files;
         try { files = _host.Blocks.EnumerateItems(_tile.Block).Where(i => i.IsShortcut).ToList(); }
         catch { files = Array.Empty<IconItem>(); }
-        Items.Clear();
+        _allItems.Clear();
         foreach (var item in files)
         {
             var model = new IconGridItem
@@ -112,9 +118,10 @@ public partial class LinkBasketPopupView : UserControl
                 FullPath = item.FullPath,
                 IsFolder = false
             };
-            Items.Add(model);
+            _allItems.Add(model);
             _ = LoadIconAsync(model);
         }
+        RefreshVisiblePage();
     }
 
     public void FocusItems() => IconList.Focus();
@@ -122,7 +129,69 @@ public partial class LinkBasketPopupView : UserControl
     private async Task LoadIconAsync(IconGridItem item)
     {
         var icon = await Task.Run(() => ShellIconService.GetIcon(item.FullPath, 48));
-        if (icon != null && Items.Contains(item)) item.Icon = icon;
+        if (icon != null && _allItems.Contains(item)) item.Icon = icon;
+    }
+
+    /// <summary>根据窗口实际内容区计算每页容量，所有快捷方式只在分页间切换，不启用滚动条。</summary>
+    private void UpdatePageCapacity()
+    {
+        if (IconList.ActualWidth <= 0 || IconList.ActualHeight <= 0) return;
+        var columns = Math.Max(1, (int)Math.Floor(IconList.ActualWidth / 92));
+        var rows = Math.Max(1, (int)Math.Floor(IconList.ActualHeight / 104));
+        var pageSize = columns * rows;
+        if (pageSize == _pageSize) return;
+        _pageSize = pageSize;
+        RefreshVisiblePage();
+    }
+
+    private int PageCount => Math.Max(1,
+        (int)Math.Ceiling(_allItems.Count / (double)Math.Max(1, _pageSize)));
+
+    /// <summary>只把当前页条目放入 ListBox，同时刷新底部圆点导航。</summary>
+    private void RefreshVisiblePage()
+    {
+        _currentPage = Math.Clamp(_currentPage, 0, PageCount - 1);
+        Items.Clear();
+        foreach (var item in _allItems.Skip(_currentPage * _pageSize).Take(_pageSize))
+            Items.Add(item);
+        RefreshPageDots();
+    }
+
+    private void RefreshPageDots()
+    {
+        PageDots.Children.Clear();
+        var count = PageCount;
+        PageDots.Visibility = count > 1 ? Visibility.Visible : Visibility.Collapsed;
+        for (var page = 0; page < count; page++)
+        {
+            var index = page;
+            var dot = new Button
+            {
+                Style = (Style)FindResource("PageDot"),
+                Background = new SolidColorBrush(page == _currentPage
+                    ? _host.AccentColor : _host.ThemePalette.TrackOff),
+                ToolTip = $"第 {page + 1} 页"
+            };
+            System.Windows.Automation.AutomationProperties.SetName(dot,
+                $"第 {page + 1} 页");
+            dot.Click += (_, _) => ChangePage(index);
+            PageDots.Children.Add(dot);
+        }
+    }
+
+    private void ChangePage(int page)
+    {
+        if (page < 0 || page >= PageCount || page == _currentPage) return;
+        _currentPage = page;
+        RefreshVisiblePage();
+    }
+
+    /// <summary>供弹窗级键盘处理调用，使焦点在页点或开关上时也能翻页。</summary>
+    public bool TryMovePage(int delta)
+    {
+        if (PageCount <= 1) return false;
+        ChangePage(Math.Clamp(_currentPage + delta, 0, PageCount - 1));
+        return true;
     }
 
     /// <summary>展开窗口固定 20% 磨砂叠色，文字与提示层保持主题对比度。</summary>
@@ -242,6 +311,7 @@ public partial class LinkBasketPopupView : UserControl
         var moving = Items.Where(i => paths.Contains(i.FullPath,
             StringComparer.OrdinalIgnoreCase)).ToList();
         if (moving.Count == 0) return;
+        var pageStart = _currentPage * _pageSize;
         var remaining = Items.Except(moving).ToList();
         var target = e.OriginalSource is DependencyObject source
             ? (ItemsControl.ContainerFromElement(IconList, source) as ListBoxItem)?.DataContext as IconGridItem
@@ -249,15 +319,26 @@ public partial class LinkBasketPopupView : UserControl
         var index = target == null ? remaining.Count : remaining.IndexOf(target);
         if (index < 0) index = remaining.Count;
         remaining.InsertRange(index, moving);
-        Items.Clear();
-        foreach (var item in remaining) Items.Add(item);
-        _host.SetItemOrder(_tile, Items.Select(i => i.FullPath));
+        for (var offset = 0; offset < remaining.Count; offset++)
+            _allItems[pageStart + offset] = remaining[offset];
+        _host.SetItemOrder(_tile, _allItems.Select(i => i.FullPath));
+        RefreshVisiblePage();
     }
 
     private void OnKeyDown(object sender, KeyEventArgs e)
     {
         var ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
-        if (e.Key == Key.Escape) { _popup.CloseAnimated(); e.Handled = true; }
+        if (Keyboard.Modifiers == ModifierKeys.None && e.Key == Key.Left)
+        {
+            ChangePage(_currentPage - 1);
+            e.Handled = true;
+        }
+        else if (Keyboard.Modifiers == ModifierKeys.None && e.Key == Key.Right)
+        {
+            ChangePage(_currentPage + 1);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape) { _popup.CloseAnimated(); e.Handled = true; }
         else if (e.Key == Key.Enter)
         {
             foreach (var path in SelectedPaths()) ShellFileService.Open(path);

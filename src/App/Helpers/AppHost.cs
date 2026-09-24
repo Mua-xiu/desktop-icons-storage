@@ -162,6 +162,7 @@ public class AppHost : IDisposable
                 throw new IOException("新建窗口未能显示，已撤销这次创建。");
             }
             Blocks.Save();
+            _settingsWindow?.RefreshModeConstraints();
         }
         catch (Exception ex)
         {
@@ -380,6 +381,7 @@ public class AppHost : IDisposable
         Windows.Remove(w);
         w.Dispose();
         Blocks.Save();
+        _settingsWindow?.RefreshModeConstraints();
         foreach (var other in Windows) other.RefreshView();
     }
 

@@ -211,6 +211,15 @@ public partial class SettingsWindow : Window
         RestoreAllButton.Click += (_, _) => _host.RestoreAllWithConfirm();
 
         _loaded = true;
+        RefreshModeConstraints();
+    }
+
+    /// <summary>有链接筐时固定全局图标大小，保证展开窗口分页格数稳定。</summary>
+    public void RefreshModeConstraints()
+    {
+        var hasLinkBasket = _host.Blocks.Blocks.Any(block => block.IsLink);
+        IconSizeCombo.IsEnabled = !hasLinkBasket;
+        IconSizeLockNote.Visibility = hasLinkBasket ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>按系统主题填充笔刷（Win11 设置应用配色：深墨灰底 / 浅浅灰底白卡片）。</summary>

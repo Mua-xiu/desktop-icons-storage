@@ -79,12 +79,13 @@ public static class DesktopEmbedService
     /// 以屏幕坐标设置窗口位置与尺寸，但保留创建时已经确定的桌面 z 序。
     /// 几何更新不能再混入桌面图标子窗口作为插入点，否则失败时移动、折叠和缩放会同时失效。
     /// </summary>
-    public static bool SetBounds(IntPtr hwnd, int screenX, int screenY, int w, int h)
+    public static bool SetBounds(IntPtr hwnd, int screenX, int screenY, int w, int h,
+        int cornerRadiusDip = 8)
     {
         var updated = NativeMethods.SetWindowPos(hwnd, IntPtr.Zero, screenX, screenY, w, h,
             NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOACTIVATE);
         if (!updated) return false;
-        ApplyRoundedCorners(hwnd, w, h);
+        ApplyRoundedCorners(hwnd, w, h, cornerRadiusDip);
         return true;
     }
 
@@ -94,9 +95,9 @@ public static class DesktopEmbedService
             NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE | NativeMethods.SWP_NOACTIVATE);
 
     /// <summary>
-    /// 用窗口区域裁剪出圆角（半径与 RootBorder 的 8 DIP 对齐）。
+    /// 用窗口区域裁剪出圆角，并与各视图 RootBorder 的实际半径保持一致。
     /// </summary>
-    public static void ApplyRoundedCorners(IntPtr hwnd, int w, int h)
+    public static void ApplyRoundedCorners(IntPtr hwnd, int w, int h, int cornerRadiusDip = 8)
     {
         if (w <= 0 || h <= 0) return;
 
@@ -116,7 +117,7 @@ public static class DesktopEmbedService
         }
         catch { /* Windows 10 等旧系统继续使用窗口区域裁剪 */ }
 
-        var ellipse = (int)(16 * DpiHelper.WindowScale(hwnd)); // 8 DIP 半径 → 16 DIP 直径
+        var ellipse = (int)(2 * cornerRadiusDip * DpiHelper.WindowScale(hwnd));
         var rgn = NativeMethods.CreateRoundRectRgn(0, 0, w, h, ellipse, ellipse);
         // SetWindowRgn 后区域归系统所有，不需要也不能 DeleteObject
         NativeMethods.SetWindowRgn(hwnd, rgn, true);

@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using DesktopIconsStorage.App.Helpers;
@@ -86,7 +87,7 @@ public sealed class LinkBasketPopupWindow : IDisposable
         var acrylic = BackdropService.Apply(Hwnd, color, 51,
             blurEnabled: true, _host.IsDarkTheme) == BackdropService.BackdropKind.Acrylic;
         _view.ApplyTheme(_host.IsDarkTheme, acrylic);
-        DesktopEmbedService.ApplyRoundedCorners(Hwnd, _finish.W, _finish.H);
+        DesktopEmbedService.ApplyRoundedCorners(Hwnd, _finish.W, _finish.H, 16);
     }
 
     public void CloseAnimated()
@@ -150,6 +151,13 @@ public sealed class LinkBasketPopupWindow : IDisposable
         if (msg == 0x0100 && wParam.ToInt64() == 0x1B) // WM_KEYDOWN / Esc
         {
             CloseAnimated();
+            handled = true;
+        }
+        else if (msg == 0x0100 && Keyboard.Modifiers == ModifierKeys.None &&
+                 wParam.ToInt64() is 0x25 or 0x27 &&
+                 _view?.TryMovePage(wParam.ToInt64() == 0x25 ? -1 : 1) == true)
+        {
+            // 方向键在弹窗内全局生效，包括页点或顶部开关当前持有焦点时。
             handled = true;
         }
         if (msg == 0x0006 && wParam == IntPtr.Zero && _ready &&

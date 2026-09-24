@@ -176,6 +176,10 @@
                                     <ComboBoxItem Content="大（48 px）" Tag="48"/>
                                 </ComboBox>
                             </Grid>
+                            <TextBlock x:Name="IconSizeLockNote" Margin="0,2,0,10"
+                                       Foreground="{DynamicResource TextSecondary}" FontSize="12"
+                                       TextWrapping="Wrap" Visibility="Collapsed"
+                                       Text="存在快捷方式收纳筐时，图标大小固定，以保持展开窗口分页容量一致。删除全部链接筐后可重新调整。"/>
                             <Grid Style="{StaticResource Row}">
                                 <TextBlock Text="显示图标名称（全局默认）" Style="{StaticResource RowLabel}"/>
                                 <CheckBox x:Name="ShowNamesBox" Style="{StaticResource Switch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
