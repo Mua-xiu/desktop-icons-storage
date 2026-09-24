@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -71,6 +72,8 @@ public sealed class LinkBasketPopupWindow : IDisposable
         _view = new LinkBasketPopupView(_tile, this, _host);
         _source.RootVisual = _view;
         _source.AddHook(WndProc);
+        if (!DesktopEmbedService.ShowWithoutActivation(Hwnd))
+            throw new IOException("收纳筐展开窗口未能显示。");
         DesktopEmbedService.RaiseAboveDesktopIcons(Hwnd);
         ApplyTheme();
         AnimateTo(1);

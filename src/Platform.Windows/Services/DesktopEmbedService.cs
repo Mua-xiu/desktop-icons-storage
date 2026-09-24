@@ -36,6 +36,16 @@ public static class DesktopEmbedService
     public static bool IsWindowAlive(IntPtr hwnd) =>
         hwnd != IntPtr.Zero && NativeMethods.IsWindow(hwnd);
 
+    public static bool IsShown(IntPtr hwnd) =>
+        hwnd != IntPtr.Zero && NativeMethods.IsWindowVisible(hwnd);
+
+    /// <summary>2026-09-24：模态创建后显式显示桌面窗，避免新盒已保存却不可见。</summary>
+    public static bool ShowWithoutActivation(IntPtr hwnd)
+    {
+        NativeMethods.ShowWindow(hwnd, 4 /* SW_SHOWNOACTIVATE */);
+        return NativeMethods.IsWindowVisible(hwnd);
+    }
+
     /// <summary>块窗口是否仍挂接在桌面宿主下（以 owner 方式挂接）。</summary>
     public static bool IsEmbedded(IntPtr hwnd, IntPtr host) =>
         hwnd != IntPtr.Zero && NativeMethods.IsWindow(hwnd) &&

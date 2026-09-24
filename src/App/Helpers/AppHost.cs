@@ -105,22 +105,27 @@ public class AppHost : IDisposable
 
     // ---------- 块窗口管理 ----------
 
-    private void CreateWindow(Block block)
+    private bool CreateWindow(Block block)
     {
         if (!BlockModes.IsValid(block.Mode))
         {
             Log($"未知收纳盒模式，跳过窗口：{block.Name}");
-            return;
+            return false;
         }
         NormalizeBlockBounds(block);
         var w = new BlockWindow(this, block);
         Windows.Add(w);
-        try { w.Show(); }
+        try
+        {
+            w.Show();
+            return true;
+        }
         catch (Exception ex)
         {
             LogError("CreateWindow", ex);
             Windows.Remove(w);
             w.Dispose();
+            return false;
         }
     }
 
@@ -137,18 +142,32 @@ public class AppHost : IDisposable
 
     public void NewBlock()
     {
-        var dialog = new CreateBlockDialog(IsDarkTheme);
-        if (dialog.ShowDialog() != true) return;
-        var offset = (int)(40 * DpiHelper.SystemScale) * (Windows.Count % 8);
         try
         {
-            var block = Blocks.CreateBlock(FirstBlockX() + offset, FirstBlockY() + offset,
-                dialog.BlockName, DpiHelper.SystemScale, dialog.Mode,
+            var dialog = new CreateBlockDialog(IsDarkTheme);
+            if (dialog.ShowDialog() != true) return;
+            // 2026-09-24：新盒接着最后一个盒放置，避免多屏时总落到首屏角落。
+            var anchor = Windows.LastOrDefault();
+            var scale = anchor == null ? DpiHelper.SystemScale : DpiHelper.WindowScale(anchor.Hwnd);
+            var x = anchor == null ? FirstBlockX() : anchor.Block.X + 40 * scale;
+            var y = anchor == null ? FirstBlockY() : anchor.Block.Y + 40 * scale;
+            var block = Blocks.CreateBlock(x, y,
+                dialog.BlockName, scale, dialog.Mode,
                 dialog.PreviewRows, dialog.PreviewColumns);
-            CreateWindow(block);
+            if (!CreateWindow(block))
+            {
+                // 2026-09-24：窗口不可见时撤销空盒，避免列表里留下“创建成功”的假象。
+                if (block.IsLink) Blocks.RemoveEmptyLinkBlock(block);
+                else Blocks.DeleteBlock(block, null);
+                throw new IOException("新建窗口未能显示，已撤销这次创建。");
+            }
             Blocks.Save();
         }
-        catch (Exception ex) { NotifyError($"创建收纳盒失败：{ex.Message}"); }
+        catch (Exception ex)
+        {
+            LogError("NewBlock", ex);
+            NotifyError($"创建收纳盒失败：{ex.Message}");
+        }
     }
 
     private static int FirstBlockX()

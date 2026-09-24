@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -48,6 +49,14 @@ public class BlockWindow : IDisposable
     {
         CreateSource();
         WatchFolder();
+        // 2026-09-24：ShowDialog 返回后仍可能收到隐藏消息，空闲时再次确认可见。
+        _source?.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () =>
+        {
+            if (_source == null || DesktopEmbedService.IsShown(Hwnd)) return;
+            if (!DesktopEmbedService.ShowWithoutActivation(Hwnd))
+                Helpers.AppHost.Log($"Show: window remained hidden, block={Block.Name}");
+            DesktopEmbedService.RaiseAboveDesktopIcons(Hwnd);
+        });
     }
 
     private void CreateSource()
@@ -87,6 +96,10 @@ public class BlockWindow : IDisposable
             _source.RootVisual = _view;
         }
         _source.AddHook(WndProc);
+
+        // 2026-09-24：动态新建窗口可能被前一个模态对话框隐藏，必须显式显示。
+        if (!DesktopEmbedService.ShowWithoutActivation(_source.Handle))
+            throw new IOException("桌面收纳盒窗口未能显示。");
 
         // HwndSource 首次创建不会经过 SetBounds；必须立即设置窗口区域，
         // 否则毛玻璃底层会从 WPF Border 的四个圆角漏出。
