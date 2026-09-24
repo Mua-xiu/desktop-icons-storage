@@ -290,7 +290,7 @@ public class BlockWindow : IDisposable
         if (!Block.IsLink) return;
         Block.PreviewRows = rows;
         Block.PreviewColumns = columns;
-        var scale = DpiHelper.SystemScale;
+        var scale = DpiHelper.WindowScale(Hwnd);
         SetSizeScreen((int)((columns * 52 + 24) * scale),
             (int)((rows * 52 + 55) * scale));
         _linkView?.RefreshItems();
@@ -379,6 +379,12 @@ public class BlockWindow : IDisposable
         {
             // z 序钉死：任何来源（系统/激活/自身误用）想把块抬离桌面宿主正上方时强制拉回
             DesktopEmbedService.PinZOrderAboveHost(lParam, _hostHwnd);
+        }
+        else if (msg == 0x02E0 /* WM_DPICHANGED */ && Block.IsLink)
+        {
+            // 跨显示器后用目标屏 DPI 重新计算小盒规格，仍不允许拖边自由缩放。
+            _source?.Dispatcher.BeginInvoke(() =>
+                SetLinkPreviewSize(Block.PreviewRows, Block.PreviewColumns));
         }
         return IntPtr.Zero;
     }

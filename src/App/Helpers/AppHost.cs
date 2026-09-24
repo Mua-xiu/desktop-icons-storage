@@ -176,9 +176,11 @@ public class AppHost : IDisposable
             b.Collapsed = false;
             b.PreviewRows = Math.Clamp(b.PreviewRows, 2, 4);
             b.PreviewColumns = Math.Clamp(b.PreviewColumns, 2, 4);
-            b.Width = (b.PreviewColumns * 52 + 24) * s;
-            b.Height = (b.PreviewRows * 52 + 55) * s;
-            var margin = Math.Max(12 * s, 12);
+            var monitorScale = DpiHelper.ScaleAt((int)b.X + (int)b.Width / 2,
+                (int)b.Y + (int)b.Height / 2);
+            b.Width = (b.PreviewColumns * 52 + 24) * monitorScale;
+            b.Height = (b.PreviewRows * 52 + 55) * monitorScale;
+            var margin = Math.Max(12 * monitorScale, 12);
             b.X = Math.Clamp(b.X, area.X + margin,
                 Math.Max(area.X + margin, area.X + area.W - b.Width - margin));
             b.Y = Math.Clamp(b.Y, area.Y + margin,

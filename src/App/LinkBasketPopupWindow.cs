@@ -39,7 +39,7 @@ public sealed class LinkBasketPopupWindow : IDisposable
             (int)tile.Block.Width, (int)tile.Block.Height);
         var area = DesktopEmbedService.GetNearestMonitorWorkArea(
             _start.X, _start.Y, _start.W, _start.H);
-        var scale = DpiHelper.SystemScale;
+        var scale = DpiHelper.WindowScale(tile.Hwnd);
         var width = Math.Min((int)(620 * scale), Math.Max(_start.W, area.W - 40));
         var height = Math.Min((int)(440 * scale), Math.Max(_start.H, area.H - 40));
         _finish = (area.X + (area.W - width) / 2,
