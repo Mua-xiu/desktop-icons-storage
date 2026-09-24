@@ -19,6 +19,16 @@ File.WriteAllText(sample, "只用于链接筐烟测。");
 var manager = new BlockManager(new AppSettings { StorageRoot = Path.Combine(root, "Storage") });
 var linkBlock = manager.CreateBlock(10, 10, "链接筐", mode: BlockModes.Link);
 var entityBlock = manager.CreateBlock(200, 10, "实体盒");
+var largeBlock = manager.CreateBlock(400, 10, "十行十列",
+    mode: BlockModes.Link, previewRows: 10, previewColumns: 10);
+Check(largeBlock.PreviewRows == 10 && largeBlock.PreviewColumns == 10,
+    "预览规格应支持 10 行 10 列");
+Check(Throws(() => manager.CreateBlock(400, 10, "越界规格",
+        mode: BlockModes.Link, previewRows: 11)),
+    "预览规格不能超过 10");
+var fitted = LinkBasketSize.Calculate(10, 10, 1, 400, 300);
+Check(fitted.Width <= 376 && fitted.Height <= 276,
+    "十行十列预览在小工作区内应等比缩小");
 
 var add = LinkBasketService.Add(linkBlock, new[] { sample });
 Check(add.Added == 1 && add.Errors.Count == 0, "真实文件应生成快捷方式");

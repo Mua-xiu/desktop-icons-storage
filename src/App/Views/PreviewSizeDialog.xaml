@@ -1,0 +1,26 @@
+<Window x:Class="DesktopIconsStorage.App.Views.PreviewSizeDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="设置小盒预览规格" Width="380" SizeToContent="Height"
+        WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
+        Background="{DynamicResource WindowBg}" Foreground="{DynamicResource TextPrimary}"
+        FontFamily="Segoe UI Variable Text, Microsoft YaHei UI" FontSize="13">
+    <StackPanel Margin="24">
+        <!-- 规格选择区：行数与列数均可独立选择 2 到 10。 -->
+        <TextBlock Text="预览网格" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,8"/>
+        <TextBlock Text="设置桌面小盒的图标行数和列数，不限制筐内总数。"
+                   Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap"
+                   Margin="0,0,0,18"/>
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,22">
+            <TextBlock Text="行数" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <ComboBox x:Name="RowsBox" Width="84"/>
+            <TextBlock Text="列数" VerticalAlignment="Center" Margin="22,0,8,0"/>
+            <ComboBox x:Name="ColumnsBox" Width="84"/>
+        </StackPanel>
+        <!-- 操作区。 -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="取消" Width="84" Margin="0,0,10,0" Click="OnCancel"/>
+            <Button Content="保存" Width="84" Click="OnSave"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

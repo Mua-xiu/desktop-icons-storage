@@ -93,7 +93,7 @@ public partial class BlockView : UserControl
         }
     }
 
-    /// <summary>按当前图标规格计算可完整容纳 3×3 项目的最小窗口尺寸（物理像素）。</summary>
+    /// <summary>最小宽度保留三列；高度允许缩到一行，名称开启后也能向上收紧。</summary>
     private (int Width, int Height) MinimumGridSize(double scale)
     {
         var settings = _host.Settings;
@@ -101,10 +101,10 @@ public partial class BlockView : UserControl
         var cellHeight = EffectiveShowNames ? settings.IconSize + 60 : settings.IconSize + 20;
         return (
             (int)((3 * cellWidth + 16) * scale),
-            (int)((40 + 3 * cellHeight + 12) * scale));
+            (int)((40 + cellHeight + 12) * scale));
     }
 
-    /// <summary>图标规格或名称显示方式变化后，确保现有窗口仍满足 3×3 下限。</summary>
+    /// <summary>图标规格或名称显示方式变化后，仅保证一行图标可见。</summary>
     private void EnsureMinimumGridSize()
     {
         var minimum = MinimumGridSize(DpiScale);

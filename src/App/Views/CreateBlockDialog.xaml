@@ -5,24 +5,6 @@
         WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
         Background="{DynamicResource WindowBg}" Foreground="{DynamicResource TextPrimary}"
         FontFamily="Segoe UI Variable Text, Microsoft YaHei UI" FontSize="13">
-    <Window.Resources>
-        <!-- 单选项显式使用主题文字色，避免系统默认黑字落在深色窗口上。 -->
-        <Style TargetType="RadioButton">
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-        </Style>
-        <!-- 预览规格直接继承设置窗口所用的全局下拉框模板。 -->
-        <Style x:Key="CreateCombo" TargetType="ComboBox"
-               BasedOn="{StaticResource {x:Type ComboBox}}">
-            <Setter Property="Width" Value="108"/>
-            <Setter Property="Height" Value="32"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-        </Style>
-        <Style TargetType="TextBox">
-            <Setter Property="Background" Value="{DynamicResource ControlBg}"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderSoft}"/>
-        </Style>
-    </Window.Resources>
     <StackPanel Margin="24">
         <!-- 名称与固定模式选择区。 -->
         <TextBlock Text="名称" Margin="0,0,0,6"/>
@@ -38,17 +20,10 @@
         <StackPanel x:Name="PreviewOptions" Visibility="Collapsed">
             <TextBlock Text="小盒预览规格" Margin="0,0,0,8"/>
             <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
-                <ComboBox x:Name="RowsBox" Style="{StaticResource CreateCombo}" SelectedIndex="0">
-                    <ComboBoxItem Content="2 行" Tag="2"/>
-                    <ComboBoxItem Content="3 行" Tag="3"/>
-                    <ComboBoxItem Content="4 行" Tag="4"/>
-                </ComboBox>
-                <TextBlock Text="×" VerticalAlignment="Center" Margin="10,0"/>
-                <ComboBox x:Name="ColumnsBox" Style="{StaticResource CreateCombo}" SelectedIndex="0">
-                    <ComboBoxItem Content="2 列" Tag="2"/>
-                    <ComboBoxItem Content="3 列" Tag="3"/>
-                    <ComboBoxItem Content="4 列" Tag="4"/>
-                </ComboBox>
+                <TextBlock Text="行数" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <ComboBox x:Name="RowsBox" Width="108" Height="32"/>
+                <TextBlock Text="列数" VerticalAlignment="Center" Margin="18,0,8,0"/>
+                <ComboBox x:Name="ColumnsBox" Width="108" Height="32"/>
             </StackPanel>
         </StackPanel>
         <!-- 提交区。 -->

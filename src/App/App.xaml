@@ -4,113 +4,29 @@
              Startup="OnStartup" Exit="OnExit"
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
-        <!-- 全局主题笔刷：ThemeResourceManager 按系统或用户选择同步到所有窗口。 -->
-        <SolidColorBrush x:Key="WindowBg" Color="#FF202020"/>
-        <SolidColorBrush x:Key="NavBg" Color="#FF202020"/>
-        <SolidColorBrush x:Key="CardBg" Color="#FF2B2B2B"/>
-        <SolidColorBrush x:Key="TextPrimary" Color="#FFFFFFFF"/>
-        <SolidColorBrush x:Key="TextSecondary" Color="#FFC5C5C5"/>
-        <SolidColorBrush x:Key="NavHeader" Color="#FF9D9D9D"/>
-        <SolidColorBrush x:Key="ControlBg" Color="#FF2D2D2D"/>
-        <SolidColorBrush x:Key="ControlBgHover" Color="#FF353535"/>
-        <SolidColorBrush x:Key="ControlBgPress" Color="#FF282828"/>
-        <SolidColorBrush x:Key="BorderSoft" Color="#FF3D3D3D"/>
-        <SolidColorBrush x:Key="TrackOff" Color="#FF5A5A5A"/>
-        <SolidColorBrush x:Key="PopupBg" Color="#FF2B2B2B"/>
-        <SolidColorBrush x:Key="Accent" Color="#FF3D9BFF"/>
+        <ResourceDictionary>
+            <!-- 基础控件与盒体菜单只维护一份全局样式。 -->
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Styles/Controls.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
 
-        <!-- 全局开关模板：设置窗口与链接筐弹窗共用相同交互外观。 -->
-        <Style x:Key="Switch" TargetType="CheckBox">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="CheckBox">
-                        <Grid Width="36" Height="20">
-                            <Border x:Name="Track" CornerRadius="10" Background="{DynamicResource TrackOff}"/>
-                            <Border x:Name="Knob" CornerRadius="8" Width="16" Height="16"
-                                    Background="White" HorizontalAlignment="Left" Margin="2,0"/>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Track" Property="Background" Value="{DynamicResource Accent}"/>
-                                <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- 全局深浅主题下拉框：设置窗口与删除窗口共用同一套模板。 -->
-        <Style TargetType="ComboBox">
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ComboBox">
-                        <Grid>
-                            <ToggleButton x:Name="ToggleButton" Focusable="False"
-                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
-                                          ClickMode="Press">
-                                <ToggleButton.Template>
-                                    <ControlTemplate TargetType="ToggleButton">
-                                        <Border x:Name="Bd" CornerRadius="4" Background="{DynamicResource ControlBg}"
-                                                BorderBrush="{DynamicResource BorderSoft}" BorderThickness="1" Padding="10,5">
-                                            <Grid TextElement.Foreground="{DynamicResource TextPrimary}">
-                                                <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                                <TextBlock Text="▾" Foreground="{DynamicResource TextSecondary}"
-                                                           HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                                            </Grid>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ControlBgHover}"/>
-                                            </Trigger>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter TargetName="Bd" Property="Opacity" Value="0.5"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </ToggleButton.Template>
-                                <ContentPresenter Content="{TemplateBinding SelectionBoxItem}"
-                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                                  TextElement.Foreground="{DynamicResource TextPrimary}"/>
-                            </ToggleButton>
-                            <Popup x:Name="Popup" Placement="Bottom" AllowsTransparency="True" Focusable="False"
-                                   IsOpen="{TemplateBinding IsDropDownOpen}" PopupAnimation="Slide">
-                                <Border Background="{DynamicResource PopupBg}"
-                                        BorderBrush="{DynamicResource BorderSoft}" BorderThickness="1"
-                                        CornerRadius="4" Padding="2" MinWidth="{TemplateBinding ActualWidth}"
-                                        MaxHeight="220" Margin="0,2,0,0">
-                                    <ScrollViewer CanContentScroll="True">
-                                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/>
-                                    </ScrollViewer>
-                                </Border>
-                            </Popup>
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style TargetType="ComboBoxItem">
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="Padding" Value="8,4"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ComboBoxItem">
-                        <Border x:Name="Bd" CornerRadius="3" Padding="{TemplateBinding Padding}"
-                                Background="Transparent">
-                            <ContentPresenter/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ControlBgHover}"/>
-                            </Trigger>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ControlBgPress}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+            <!-- 主题资源由 ThemeResourceManager 在系统或用户主题变化时统一更新。 -->
+            <SolidColorBrush x:Key="WindowBg" Color="#FF202020"/>
+            <SolidColorBrush x:Key="NavBg" Color="#FF202020"/>
+            <SolidColorBrush x:Key="CardBg" Color="#FF2B2B2B"/>
+            <SolidColorBrush x:Key="TextPrimary" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="TextSecondary" Color="#FFC5C5C5"/>
+            <SolidColorBrush x:Key="NavHeader" Color="#FF9D9D9D"/>
+            <SolidColorBrush x:Key="ControlBg" Color="#FF2D2D2D"/>
+            <SolidColorBrush x:Key="ControlBgHover" Color="#FF353535"/>
+            <SolidColorBrush x:Key="ControlBgPress" Color="#FF282828"/>
+            <SolidColorBrush x:Key="BorderSoft" Color="#FF3D3D3D"/>
+            <SolidColorBrush x:Key="TrackOff" Color="#FF5A5A5A"/>
+            <SolidColorBrush x:Key="PopupBg" Color="#FF2B2B2B"/>
+            <SolidColorBrush x:Key="MenuBg" Color="#FF2B2B2E"/>
+            <SolidColorBrush x:Key="MenuHover" Color="#FF3F4A5C"/>
+            <SolidColorBrush x:Key="MenuBorder" Color="#FF505055"/>
+            <SolidColorBrush x:Key="Accent" Color="#FF3D9BFF"/>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

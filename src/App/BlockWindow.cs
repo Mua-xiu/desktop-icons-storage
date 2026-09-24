@@ -291,8 +291,15 @@ public class BlockWindow : IDisposable
         Block.PreviewRows = rows;
         Block.PreviewColumns = columns;
         var scale = DpiHelper.WindowScale(Hwnd);
-        SetSizeScreen((int)((columns * 52 + 24) * scale),
-            (int)((rows * 52 + 55) * scale));
+        var area = DesktopEmbedService.GetNearestMonitorWorkArea(
+            (int)Block.X, (int)Block.Y, (int)Block.Width, (int)Block.Height);
+        var size = LinkBasketSize.Calculate(rows, columns, scale, area.W, area.H);
+        var margin = Math.Max((int)(12 * scale), 12);
+        var x = Math.Clamp((int)Block.X, area.X + margin,
+            Math.Max(area.X + margin, area.X + area.W - size.Width - margin));
+        var y = Math.Clamp((int)Block.Y, area.Y + margin,
+            Math.Max(area.Y + margin, area.Y + area.H - size.Height - margin));
+        SetBoundsScreen(x, y, size.Width, size.Height);
         _linkView?.RefreshItems();
         _host.PersistLayout();
     }

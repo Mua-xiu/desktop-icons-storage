@@ -174,12 +174,16 @@ public class AppHost : IDisposable
         {
             // 链接筐尺寸只由持久化行列规格决定，旧版八向缩放不能改变小盒。
             b.Collapsed = false;
-            b.PreviewRows = Math.Clamp(b.PreviewRows, 2, 4);
-            b.PreviewColumns = Math.Clamp(b.PreviewColumns, 2, 4);
+            b.PreviewRows = Math.Clamp(b.PreviewRows,
+                PreviewGridLimits.Minimum, PreviewGridLimits.Maximum);
+            b.PreviewColumns = Math.Clamp(b.PreviewColumns,
+                PreviewGridLimits.Minimum, PreviewGridLimits.Maximum);
             var monitorScale = DpiHelper.ScaleAt((int)b.X + (int)b.Width / 2,
                 (int)b.Y + (int)b.Height / 2);
-            b.Width = (b.PreviewColumns * 52 + 24) * monitorScale;
-            b.Height = (b.PreviewRows * 52 + 55) * monitorScale;
+            var size = LinkBasketSize.Calculate(b.PreviewRows, b.PreviewColumns,
+                monitorScale, area.W, area.H);
+            b.Width = size.Width;
+            b.Height = size.Height;
             var margin = Math.Max(12 * monitorScale, 12);
             b.X = Math.Clamp(b.X, area.X + margin,
                 Math.Max(area.X + margin, area.X + area.W - b.Width - margin));
@@ -190,9 +194,9 @@ public class AppHost : IDisposable
         var showNames = b.ShowIconNames ?? Settings.ShowIconNames;
         var cellW = Settings.IconSize + 34;
         var cellH = showNames ? Settings.IconSize + 60 : Settings.IconSize + 20;
-        // 收纳盒最小为完整 3×3 网格，避免缩小后图标区域无法使用。
+        // 仅要求三列宽、一行高；显示名称时不应把窗口高度锁在三行。
         var minW = (3 * cellW + 16) * s;
-        var minH = (40 + 3 * cellH + 12) * s;
+        var minH = (40 + cellH + 12) * s;
 
         // 旧版异常会把块保存为整屏尺寸；恢复为 5 列 × 3 行的常用大小。
         if (b.Width >= area.W * 0.95 && b.Height >= area.H * 0.90)
@@ -303,7 +307,8 @@ public class AppHost : IDisposable
     /// <summary>通过小盒右键菜单修改预览规格，保持尺寸与布局数据一致。</summary>
     public void SetLinkPreviewSize(BlockWindow w, int rows, int columns)
     {
-        if (!w.Block.IsLink || rows is < 2 or > 4 || columns is < 2 or > 4) return;
+        if (!w.Block.IsLink || !PreviewGridLimits.IsValid(rows) ||
+            !PreviewGridLimits.IsValid(columns)) return;
         w.SetLinkPreviewSize(rows, columns);
     }
 

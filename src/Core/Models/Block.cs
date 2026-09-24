@@ -20,8 +20,8 @@ public class Block : INotifyPropertyChanged
     public string Mode { get; set; } = BlockModes.Move;
 
     /// <summary>链接筐预览网格行列，创建后只能通过右键菜单修改。</summary>
-    public int PreviewRows { get; set; } = 2;
-    public int PreviewColumns { get; set; } = 2;
+    public int PreviewRows { get; set; } = PreviewGridLimits.Default;
+    public int PreviewColumns { get; set; } = PreviewGridLimits.Default;
 
     [JsonIgnore]
     public bool IsLink => Mode == BlockModes.Link;
@@ -69,4 +69,14 @@ public static class BlockModes
     public const string Link = "link";
 
     public static bool IsValid(string? mode) => mode is Move or Link;
+}
+
+/// <summary>小盒预览行列的产品范围，创建窗口与右键规格窗口共用。</summary>
+public static class PreviewGridLimits
+{
+    public const int Minimum = 2;
+    public const int Maximum = 10;
+    public const int Default = 2;
+
+    public static bool IsValid(int value) => value is >= Minimum and <= Maximum;
 }

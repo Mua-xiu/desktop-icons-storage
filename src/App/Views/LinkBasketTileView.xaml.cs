@@ -44,8 +44,10 @@ public partial class LinkBasketTileView : UserControl
     public void RefreshItems()
     {
         TitleText.Text = _window.Block.Name;
-        PreviewGrid.Rows = Math.Clamp(_window.Block.PreviewRows, 2, 4);
-        PreviewGrid.Columns = Math.Clamp(_window.Block.PreviewColumns, 2, 4);
+        PreviewGrid.Rows = Math.Clamp(_window.Block.PreviewRows,
+            PreviewGridLimits.Minimum, PreviewGridLimits.Maximum);
+        PreviewGrid.Columns = Math.Clamp(_window.Block.PreviewColumns,
+            PreviewGridLimits.Minimum, PreviewGridLimits.Maximum);
         PreviewGrid.Children.Clear();
         IReadOnlyList<IconItem> items;
         try { items = _host.Blocks.EnumerateItems(_window.Block).Where(i => i.IsShortcut).ToList(); }
@@ -162,20 +164,14 @@ public partial class LinkBasketTileView : UserControl
         var rename = new MenuItem { Header = "重命名" };
         rename.Click += (_, _) => BeginRename();
         menu.Items.Add(rename);
-        var sizes = new MenuItem { Header = "设置预览规格" };
-        foreach (var rows in new[] { 2, 3, 4 })
-        foreach (var columns in new[] { 2, 3, 4 })
+        var sizes = new MenuItem { Header = "设置预览规格…" };
+        sizes.Click += (_, _) =>
         {
-            var size = new MenuItem
-            {
-                Header = $"{rows} × {columns}",
-                IsCheckable = true,
-                IsChecked = rows == _window.Block.PreviewRows &&
-                            columns == _window.Block.PreviewColumns
-            };
-            size.Click += (_, _) => _host.SetLinkPreviewSize(_window, rows, columns);
-            sizes.Items.Add(size);
-        }
+            var dialog = new PreviewSizeDialog(_host.IsDarkTheme,
+                _window.Block.PreviewRows, _window.Block.PreviewColumns);
+            if (dialog.ShowDialog() == true)
+                _host.SetLinkPreviewSize(_window, dialog.Rows, dialog.Columns);
+        };
         menu.Items.Add(sizes);
         var openFolder = new MenuItem { Header = "打开收纳目录" };
         openFolder.Click += (_, _) => ShellFileService.Open(_window.Block.FolderPath);

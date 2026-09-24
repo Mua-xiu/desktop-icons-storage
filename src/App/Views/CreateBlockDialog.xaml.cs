@@ -11,12 +11,21 @@ public partial class CreateBlockDialog : Window
 {
     public string BlockName => NameBox.Text.Trim();
     public string Mode => LinkMode.IsChecked == true ? BlockModes.Link : BlockModes.Move;
-    public int PreviewRows => int.Parse((string)((ComboBoxItem)RowsBox.SelectedItem).Tag);
-    public int PreviewColumns => int.Parse((string)((ComboBoxItem)ColumnsBox.SelectedItem).Tag);
+    public int PreviewRows => RowsBox.SelectedItem is int value
+        ? value : PreviewGridLimits.Default;
+    public int PreviewColumns => ColumnsBox.SelectedItem is int value
+        ? value : PreviewGridLimits.Default;
 
     public CreateBlockDialog(bool dark)
     {
         InitializeComponent();
+        // 创建与后续修改规格使用同一范围，避免已保存规格无法在界面中重选。
+        var values = Enumerable.Range(PreviewGridLimits.Minimum,
+            PreviewGridLimits.Maximum - PreviewGridLimits.Minimum + 1).ToArray();
+        RowsBox.ItemsSource = values;
+        ColumnsBox.ItemsSource = values;
+        RowsBox.SelectedItem = PreviewGridLimits.Default;
+        ColumnsBox.SelectedItem = PreviewGridLimits.Default;
         LinkMode.Checked += (_, _) =>
         {
             PreviewOptions.Visibility = Visibility.Visible;

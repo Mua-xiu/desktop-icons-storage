@@ -27,6 +27,7 @@ src/
     Services/                   桌面挂接、主题、图标、右键菜单、自启等
   App/
     Views/                      WPF 视图及交互
+    Styles/                     全局控件和盒体菜单样式
     Helpers/                    应用中枢和 UI 辅助模型
     Tray/                       系统托盘及主题化菜单
     Assets/                     应用图标
@@ -48,13 +49,15 @@ docs/
 | `DesktopIconsStorage.Platform.Windows` | Windows API、Shell、DWM、注册表和桌面宿主能力。 |
 | `DesktopIconsStorage.App` | WPF 界面、窗口生命周期、拖放、托盘和应用编排。 |
 
+实体盒与链接筐分别使用 `BlockView`、`LinkBasketTileView`/`LinkBasketPopupView`。两种模式共享 `Block`、`BlockManager`、`BlockWindow` 和 `AppHost` 的入口与生命周期，因此分支合并仍可能在这些文件的相同改动处产生冲突；冲突位置由具体改动决定，不代表内容语义必须耦合在同一个视图中。
+
 ## 3. 启动流程
 
 1. `App.OnStartup` 首先识别维护命令，例如卸载清理。
 2. `JsonStore.MigrateLegacyFiles` 将旧版 `DesktopOrganizer` 设置复制到新配置目录。
 3. `AppHost.Run` 获取单实例互斥锁并加载设置和布局。
 4. `BlockManager` 创建或加载收纳盒模型。
-5. 每个模型对应一个 `BlockWindow` 和 `BlockView`。
+5. 每个模型对应一个 `BlockWindow`；实体盒使用 `BlockView`，链接筐使用小盒预览和独立弹窗视图。
 6. `DesktopEmbedService` 将窗口挂接到桌面层并维护 z 序。
 7. `BackdropService` 应用实时 DWM Acrylic 和深浅主题。
 8. 创建系统托盘菜单并启动 Explorer 重挂接看门狗。
@@ -68,7 +71,7 @@ docs/
 
 ## 4. 数据与文件语义
 
-DesktopIconsStorage 的“收纳”是实际文件移动，不是数据库索引或视觉隐藏。
+实体盒的“收纳”是实际文件移动；链接筐只创建或复制 `.lnk`，原文件路径不变。模式创建后不可切换。
 
 新用户默认位置：
 
@@ -142,7 +145,8 @@ DesktopIconsStorage 的“收纳”是实际文件移动，不是数据库索引
 
 ### 5.5 主题与品牌图标
 
-- `ThemeResourceManager` 把统一色板写入应用级动态资源，设置窗口、删除窗口和关闭确认窗口共同使用。
+- `ThemeResourceManager` 把统一色板写入应用级动态资源；`App/Styles/Controls.xaml` 定义全局文字、输入框、下拉框、按钮、开关和 WPF 右键菜单样式。新界面应复用这些控件样式，只把页面布局样式留在窗口内部。
+- 托盘 WinForms 菜单与 WPF 盒体菜单从 `ThemePalette` 读取相同菜单配色；系统 Shell 文件右键菜单仍由 Windows 提供。
 - `Assets/app.ico` 是 EXE、安装器和开始菜单使用的通用主图标。
 - `Assets/app-light.ico` 与 `Assets/app-dark.ico` 用于运行时主题切换。
 - 托盘图标和 WPF 窗口图标会随应用主题立即更新；Windows Shell 缓存的 EXE 与快捷方式图标不会在运行时切换。
@@ -155,10 +159,12 @@ DesktopIconsStorage 的“收纳”是实际文件移动，不是数据库索引
 ```powershell
 dotnet restore DesktopIconsStorage.sln
 dotnet build DesktopIconsStorage.sln
-.\src\App\bin\Debug\net8.0-windows\DesktopIconsStorage.exe
+.\scripts\run-test-sandbox.ps1
 ```
 
 ### 6.2 Release
+
+发布构建只能在功能合并到 `main` 后执行；功能分支的日常验证使用上面的隔离脚本。
 
 ```powershell
 dotnet build DesktopIconsStorage.sln -c Release

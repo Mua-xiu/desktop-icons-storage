@@ -26,6 +26,9 @@ public static class ThemeResourceManager
         Set("BorderSoft", palette.BorderSoft);
         Set("TrackOff", palette.TrackOff);
         Set("PopupBg", palette.PopupBackground);
+        Set("MenuBg", palette.MenuBackground);
+        Set("MenuHover", palette.MenuHover);
+        Set("MenuBorder", palette.MenuBorder);
         Set("Accent", accent);
     }
 }

@@ -41,8 +41,10 @@ public sealed class LinkBasketPopupWindow : IDisposable
             _start.X, _start.Y, _start.W, _start.H);
         var scale = DpiHelper.WindowScale(tile.Hwnd);
         // 大窗口增加可见图标容量，同时仍限制在所属显示器的工作区内。
-        var width = Math.Min((int)(780 * scale), Math.Max(_start.W, area.W - 40));
-        var height = Math.Min((int)(560 * scale), Math.Max(_start.H, area.H - 40));
+        var width = Math.Min(Math.Max((int)(780 * scale), _start.W),
+            Math.Max(_start.W, area.W - 40));
+        var height = Math.Min(Math.Max((int)(560 * scale), _start.H),
+            Math.Max(_start.H, area.H - 40));
         _finish = (area.X + (area.W - width) / 2,
             area.Y + (area.H - height) / 2, width, height);
     }

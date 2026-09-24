@@ -41,11 +41,14 @@ public class BlockManager
     // ---------- 块 CRUD ----------
 
     public Block CreateBlock(double x, double y, string? name = null, double dpiScale = 1.0,
-        string mode = BlockModes.Move, int previewRows = 2, int previewColumns = 2)
+        string mode = BlockModes.Move,
+        int previewRows = PreviewGridLimits.Default,
+        int previewColumns = PreviewGridLimits.Default)
     {
         if (!BlockModes.IsValid(mode)) throw new IOException("未知的收纳盒模式。");
-        if (previewRows is < 2 or > 4 || previewColumns is < 2 or > 4)
-            throw new IOException("预览行列必须在 2 到 4 之间。");
+        if (!PreviewGridLimits.IsValid(previewRows) ||
+            !PreviewGridLimits.IsValid(previewColumns))
+            throw new IOException("预览行列必须在 2 到 10 之间。");
         RuntimePaths.EnsureSandboxPath(_settings.StorageRoot);
         Directory.CreateDirectory(_settings.StorageRoot);
         var blockName = UniqueBlockName(name ?? (mode == BlockModes.Link ? "新建收纳筐" : "新建收纳盒"));
