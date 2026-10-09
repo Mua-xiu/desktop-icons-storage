@@ -57,6 +57,11 @@
                                FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"
                                 Margin="16,0,4,0">
+                        <!-- 失效体检入口：仅在存在"目标已删除"的快捷方式时出现（路线图第 6 项）。 -->
+                        <Button x:Name="CleanupLinksButton" Visibility="Collapsed" Click="OnCleanupDeadLinks"
+                                Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                Foreground="{DynamicResource Accent}" VerticalAlignment="Center"
+                                Margin="0,0,16,0" Padding="4,2"/>
                         <TextBlock Text="显示名称" VerticalAlignment="Center" Margin="0,0,10,0"
                                    Foreground="{DynamicResource TextPrimary}"/>
                         <CheckBox x:Name="NamesToggle" Style="{StaticResource Switch}"
@@ -77,12 +82,13 @@
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Width="88" Margin="2" HorizontalAlignment="Center"
+                                        Opacity="{Binding Opacity}"
                                         ToolTipService.Placement="Mouse"
                                         ToolTipService.InitialShowDelay="250">
                                 <StackPanel.ToolTip>
                                     <ToolTip Background="#FF2B2B2E" Foreground="White"
                                              BorderBrush="#FF505055" Padding="10,6"
-                                             Content="{Binding PlacementTarget.DataContext.Name, RelativeSource={RelativeSource Self}}"/>
+                                             Content="{Binding PlacementTarget.DataContext.ToolTipText, RelativeSource={RelativeSource Self}}"/>
                                 </StackPanel.ToolTip>
                                 <Border Width="62" Height="62" CornerRadius="10"
                                         Background="#30FFFFFF" HorizontalAlignment="Center">

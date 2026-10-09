@@ -106,6 +106,8 @@ public partial class LinkBasketPopupView : UserControl
     public void RefreshItems()
     {
         TitleText.Text = _tile.Block.Name;
+        // 重新枚举期间体检结果未就绪，先隐藏清理入口，避免沿用旧计数。
+        CleanupLinksButton.Visibility = Visibility.Collapsed;
         IReadOnlyList<IconItem> files;
         try { files = _host.Blocks.EnumerateItems(_tile.Block).Where(i => i.IsShortcut).ToList(); }
         catch { files = Array.Empty<IconItem>(); }
@@ -120,6 +122,7 @@ public partial class LinkBasketPopupView : UserControl
             };
             _allItems.Add(model);
             _ = LoadIconAsync(model);
+            _ = LoadHealthAsync(model);
         }
         RefreshVisiblePage();
     }
@@ -130,6 +133,46 @@ public partial class LinkBasketPopupView : UserControl
     {
         var icon = await Task.Run(() => ShellIconService.GetIcon(item.FullPath, 48));
         if (icon != null && _allItems.Contains(item)) item.Icon = icon;
+    }
+
+    /// <summary>体检单个快捷方式：失效项降低透明度并在悬浮提示中说明原因，清理入口随结果更新。</summary>
+    private async Task LoadHealthAsync(IconGridItem item)
+    {
+        var health = await Task.Run(() => LinkBasketService.EvaluateHealth(item.FullPath));
+        if (!_allItems.Contains(item)) return;
+        item.Health = health;
+        item.Opacity = health == LinkHealth.Ok ? 1.0 : 0.45;
+        item.HealthTip = health switch
+        {
+            LinkHealth.Missing => "目标已不存在，可通过右上角“清理失效”移除",
+            LinkHealth.Unreachable => "目标暂时无法访问（网络离线或虚拟位置），暂不判定为失效",
+            _ => null
+        };
+        UpdateCleanupButton();
+    }
+
+    /// <summary>只有"目标已删除"可清理；不可达项保留，等待用户环境恢复。</summary>
+    private void UpdateCleanupButton()
+    {
+        var dead = _allItems.Count(i => i.Health == LinkHealth.Missing);
+        CleanupLinksButton.Visibility = dead > 0 ? Visibility.Visible : Visibility.Collapsed;
+        CleanupLinksButton.Content = $"清理失效 ({dead})";
+    }
+
+    private void OnCleanupDeadLinks(object sender, RoutedEventArgs e)
+    {
+        var dead = _allItems.Where(i => i.Health == LinkHealth.Missing)
+            .Select(i => i.FullPath).Where(IsOwnedLink).ToList();
+        if (dead.Count == 0) return;
+        var keep = _allItems.Count(i => i.Health == LinkHealth.Unreachable);
+        var text = $"将 {dead.Count} 个目标已不存在的快捷方式移入回收站。" +
+                   (keep > 0 ? $"\n网络或暂时不可达的 {keep} 个会保留。" : "") +
+                   "\n是否继续？";
+        if (MessageBox.Show(text, "清理失效快捷方式",
+                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        if (!ShellFileService.RecycleDelete(_popup.Hwnd, dead))
+            _host.NotifyError("清理失败，请检查文件是否仍存在。");
+        RefreshItems();
     }
 
     /// <summary>根据窗口实际内容区计算每页容量，所有快捷方式只在分页间切换，不启用滚动条。</summary>
