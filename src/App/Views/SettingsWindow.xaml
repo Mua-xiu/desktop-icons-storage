@@ -63,27 +63,6 @@
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         </Style>
 
-        <!-- iOS 风格开关 -->
-        <Style x:Key="Switch" TargetType="CheckBox">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="CheckBox">
-                        <Grid Width="36" Height="20">
-                            <Border x:Name="Track" CornerRadius="10" Background="{DynamicResource TrackOff}"/>
-                            <Border x:Name="Knob" CornerRadius="8" Width="16" Height="16"
-                                    Background="White" HorizontalAlignment="Left" Margin="2,0"/>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Track" Property="Background" Value="{StaticResource Accent}"/>
-                                <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
         <!-- 滑块：细轨 + 主题色圆点 -->
         <Style TargetType="Slider">
             <Setter Property="Template">
@@ -108,32 +87,6 @@
             </Setter>
         </Style>
 
-        <!-- 按钮 -->
-        <Style TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource ControlBg}"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="14,6"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" CornerRadius="4" Background="{TemplateBinding Background}"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ControlBgHover}"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ControlBgPress}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </Window.Resources>
 
     <Grid>
@@ -223,6 +176,10 @@
                                     <ComboBoxItem Content="大（48 px）" Tag="48"/>
                                 </ComboBox>
                             </Grid>
+                            <TextBlock x:Name="IconSizeLockNote" Margin="0,2,0,10"
+                                       Foreground="{DynamicResource TextSecondary}" FontSize="12"
+                                       TextWrapping="Wrap" Visibility="Collapsed"
+                                       Text="存在快捷方式收纳筐时，图标大小固定，以保持展开窗口分页容量一致。删除全部链接筐后可重新调整。"/>
                             <Grid Style="{StaticResource Row}">
                                 <TextBlock Text="显示图标名称（全局默认）" Style="{StaticResource RowLabel}"/>
                                 <CheckBox x:Name="ShowNamesBox" Style="{StaticResource Switch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
@@ -271,7 +228,7 @@
                                        TextWrapping="Wrap" Margin="0,0,12,12"/>
                             <Grid Style="{StaticResource Row}" Margin="0">
                                 <TextBlock Text="一键全部还原" Style="{StaticResource RowLabel}"/>
-                                <Button x:Name="RestoreAllButton" Content="所有文件移回桌面…" HorizontalAlignment="Right"/>
+                                <Button x:Name="RestoreAllButton" Content="一键还原收纳内容…" HorizontalAlignment="Right"/>
                             </Grid>
                         </StackPanel>
                     </Border>

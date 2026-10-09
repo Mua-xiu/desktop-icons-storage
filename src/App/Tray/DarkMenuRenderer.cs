@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Windows.Forms;
+using DesktopIconsStorage.Platform.Services;
 using GdiColor = System.Drawing.Color;
 
 namespace DesktopIconsStorage.App.Tray;
@@ -48,20 +49,15 @@ public class ThemedColorTable : ProfessionalColorTable
 
     public ThemedColorTable(bool dark)
     {
-        if (dark)
-        {
-            _bg = GdiColor.FromArgb(0x2B, 0x2B, 0x2E);
-            _hover = GdiColor.FromArgb(0x3F, 0x4A, 0x5C);
-            _border = GdiColor.FromArgb(0x50, 0x50, 0x55);
-        }
-        else
-        {
-            // Win11 浅色：直接白底、浅灰悬停与边线
-            _bg = GdiColor.White;
-            _hover = GdiColor.FromArgb(0xE9, 0xE9, 0xEA);
-            _border = GdiColor.FromArgb(0xDC, 0xDC, 0xDC);
-        }
+        // 托盘 WinForms 菜单与 WPF 盒体菜单读取同一组主题色。
+        var palette = ThemeService.GetPalette(dark);
+        _bg = ToGdi(palette.MenuBackground);
+        _hover = ToGdi(palette.MenuHover);
+        _border = ToGdi(palette.MenuBorder);
     }
+
+    private static GdiColor ToGdi(System.Windows.Media.Color color) =>
+        GdiColor.FromArgb(color.R, color.G, color.B);
 
     public override GdiColor MenuStripGradientBegin => _bg;
     public override GdiColor MenuStripGradientEnd => _bg;

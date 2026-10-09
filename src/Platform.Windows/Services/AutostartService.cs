@@ -1,4 +1,5 @@
 using Microsoft.Win32;
+using DesktopIconsStorage.Core.Services;
 
 namespace DesktopIconsStorage.Platform.Services;
 
@@ -12,12 +13,14 @@ public static class AutostartService
 
     public static bool IsEnabled()
     {
+        if (RuntimePaths.IsSandbox) return false;
         using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath, false);
         return key?.GetValue(ValueName) is string s && s.Length > 0;
     }
 
     public static void SetEnabled(bool enable)
     {
+        if (RuntimePaths.IsSandbox) return;
         using var key = Registry.CurrentUser.CreateSubKey(RunKeyPath, true);
         if (enable)
         {
@@ -34,6 +37,7 @@ public static class AutostartService
     /// <summary>记录当前收纳根目录，供卸载器在“保留数据”时向用户显示准确位置。</summary>
     public static void RecordStorageRoot(string storageRoot)
     {
+        if (RuntimePaths.IsSandbox) return;
         using var key = Registry.CurrentUser.CreateSubKey(ProductKeyPath, true);
         key.SetValue("StorageRoot", storageRoot, RegistryValueKind.String);
     }
@@ -41,6 +45,7 @@ public static class AutostartService
     /// <summary>正式更名后移除旧版自启项，避免两个名称同时启动。</summary>
     public static void RemoveLegacyRegistration()
     {
+        if (RuntimePaths.IsSandbox) return;
         using var key = Registry.CurrentUser.CreateSubKey(RunKeyPath, true);
         key.DeleteValue(LegacyValueName, false);
     }
@@ -48,6 +53,7 @@ public static class AutostartService
     /// <summary>卸载清理时移除新旧自启项和安装元数据。</summary>
     public static void RemoveAllRegistrations()
     {
+        if (RuntimePaths.IsSandbox) return;
         using (var key = Registry.CurrentUser.CreateSubKey(RunKeyPath, true))
         {
             key.DeleteValue(ValueName, false);

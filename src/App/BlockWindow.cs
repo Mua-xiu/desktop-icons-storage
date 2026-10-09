@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -28,6 +29,8 @@ public class BlockWindow : IDisposable
     private readonly AppHost _host;
     private HwndSource? _source;
     private BlockView? _view;
+    private LinkBasketTileView? _linkView;
+    private LinkBasketPopupWindow? _linkPopup;
     private FolderWatchService? _watcher;
     private volatile bool _needsRecreate;
     private long _suppressWatcherUntilUtcTicks;
@@ -46,12 +49,21 @@ public class BlockWindow : IDisposable
     {
         CreateSource();
         WatchFolder();
+        // 2026-09-24：ShowDialog 返回后仍可能收到隐藏消息，空闲时再次确认可见。
+        _source?.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () =>
+        {
+            if (_source == null || DesktopEmbedService.IsShown(Hwnd)) return;
+            if (!DesktopEmbedService.ShowWithoutActivation(Hwnd))
+                Helpers.AppHost.Log($"Show: window remained hidden, block={Block.Name}");
+            DesktopEmbedService.RaiseAboveDesktopIcons(Hwnd);
+        });
     }
 
     private void CreateSource()
     {
         _hostHwnd = DesktopEmbedService.GetDesktopHostWindow();
-        var height = Block.Collapsed ? TitleBarHeight : (int)Block.Height;
+        var height = Block.IsLink ? (int)Block.Height
+            : Block.Collapsed ? TitleBarHeight : (int)Block.Height;
         _actualHeight = height;
 
         // NoFences 同款模型：顶层 WS_POPUP 窗口 + owner = Progman。
@@ -73,26 +85,54 @@ public class BlockWindow : IDisposable
             // 透明像素透出 DWM 毛玻璃
             CompositionTarget = { BackgroundColor = Colors.Transparent }
         };
-        _view = new BlockView(this, _host);
-        _source.RootVisual = _view;
+        if (Block.IsLink)
+        {
+            _linkView = new LinkBasketTileView(this, _host);
+            _source.RootVisual = _linkView;
+        }
+        else
+        {
+            _view = new BlockView(this, _host);
+            _source.RootVisual = _view;
+        }
         _source.AddHook(WndProc);
+
+        // 2026-09-24：动态新建窗口可能被前一个模态对话框隐藏，必须显式显示。
+        if (!DesktopEmbedService.ShowWithoutActivation(_source.Handle))
+            throw new IOException("桌面收纳盒窗口未能显示。");
 
         // HwndSource 首次创建不会经过 SetBounds；必须立即设置窗口区域，
         // 否则毛玻璃底层会从 WPF Border 的四个圆角漏出。
-        DesktopEmbedService.ApplyRoundedCorners(_source.Handle, (int)Block.Width, height);
+        DesktopEmbedService.ApplyRoundedCorners(_source.Handle, (int)Block.Width, height,
+            Block.IsLink ? 12 : 8);
 
         // 创建后立刻钉到桌面图标视图正上方（否则默认在 z 序顶部，会盖住应用窗口）
         DesktopEmbedService.RaiseAboveDesktopIcons(_source.Handle);
 
         ApplyBackdrop();
-        _view.OnCollapsedChanged(Block.Collapsed);
-        _view.RefreshItems();
+        _view?.OnCollapsedChanged(Block.Collapsed);
+        _view?.RefreshItems();
+        _linkView?.RefreshItems();
     }
 
     /// <summary>应用 DWM 亚克力 + 圆角裁剪（半径已修正，与 RootBorder 对齐）。</summary>
     public void ApplyBackdrop()
     {
-        if (_source == null || _view == null) return;
+        if (_source == null) return;
+        if (Block.IsLink)
+        {
+            // 预览小盒固定 10% 磨砂叠色，不读取全局背景不透明度滑块。
+            var tint = Color.FromRgb(0x70, 0x70, 0x70);
+            var acrylic = BackdropService.Apply(Hwnd, tint, 26,
+                blurEnabled: true, dark: true) ==
+                BackdropService.BackdropKind.Acrylic;
+            _linkView?.ApplyTheme(acrylic);
+            _linkPopup?.ApplyTheme();
+            DesktopEmbedService.ApplyRoundedCorners(Hwnd,
+                (int)Block.Width, (int)Block.Height, 12);
+            return;
+        }
+        if (_view == null) return;
         var effectiveOpacity = EffectiveBackdropOpacity();
         var alpha = (byte)Math.Clamp((int)(effectiveOpacity * 255), 40, 255);
         var palette = _host.ThemePalette;
@@ -110,7 +150,7 @@ public class BlockWindow : IDisposable
         // DWM Acrylic 会在窗口区域之后建立底层材质；最后重新施加圆角，
         // 防止透明的 WPF 四角露出矩形 Acrylic 背景。
         var actualHeight = Block.Collapsed ? TitleBarHeight : _actualHeight;
-        DesktopEmbedService.ApplyRoundedCorners(Hwnd, (int)Block.Width, actualHeight);
+        DesktopEmbedService.ApplyRoundedCorners(Hwnd, (int)Block.Width, actualHeight, 8);
 
     }
 
@@ -146,7 +186,12 @@ public class BlockWindow : IDisposable
             {
                 // 应用内部移动已经主动刷新过列表，跳过随后到达的监听回调，避免图标整组闪烁。
                 if (DateTime.UtcNow.Ticks < Interlocked.Read(ref _suppressWatcherUntilUtcTicks)) return;
-                _source?.Dispatcher.BeginInvoke(() => _view?.RefreshItems());
+                _source?.Dispatcher.BeginInvoke(() =>
+                {
+                    _view?.RefreshItems();
+                    _linkView?.RefreshItems();
+                    _linkPopup?.RefreshItems();
+                });
             };
         }
         catch { /* 文件夹暂不可用时忽略，由用户操作触发刷新 */ }
@@ -156,7 +201,12 @@ public class BlockWindow : IDisposable
 
     public void RefreshView()
     {
-        try { _source?.Dispatcher.Invoke(() => _view?.RefreshItems()); } catch { }
+        try { _source?.Dispatcher.Invoke(() =>
+        {
+            _view?.RefreshItems();
+            _linkView?.RefreshItems();
+            _linkPopup?.RefreshItems();
+        }); } catch { }
     }
 
     /// <summary>内部文件操作后立即刷新一次，并暂时抑制 FileSystemWatcher 的重复刷新。</summary>
@@ -188,7 +238,8 @@ public class BlockWindow : IDisposable
     {
         if (_source == null) return;
         var actual = Block.Collapsed ? TitleBarHeight : h;
-        if (!DesktopEmbedService.SetBounds(Hwnd, (int)Block.X, (int)Block.Y, w, actual))
+        if (!DesktopEmbedService.SetBounds(Hwnd, (int)Block.X, (int)Block.Y,
+                w, actual, Block.IsLink ? 12 : 8))
         {
             Helpers.AppHost.Log($"SetSizeScreen FAILED: hwnd={Hwnd}, w={w}, h={actual}");
             return;
@@ -203,7 +254,8 @@ public class BlockWindow : IDisposable
     {
         if (_source == null) return;
         var actual = Block.Collapsed ? TitleBarHeight : h;
-        if (!DesktopEmbedService.SetBounds(Hwnd, x, y, w, actual))
+        if (!DesktopEmbedService.SetBounds(Hwnd, x, y, w, actual,
+                Block.IsLink ? 12 : 8))
         {
             Helpers.AppHost.Log($"SetBoundsScreen FAILED: hwnd={Hwnd}, x={x}, y={y}, w={w}, h={actual}");
             return;
@@ -217,10 +269,51 @@ public class BlockWindow : IDisposable
 
     public void SetCollapsed(bool collapsed)
     {
+        if (Block.IsLink) return;
         Block.Collapsed = collapsed;
         // 滚动条已隐藏，无需处理溢出闪烁；直接动画到目标高度
         AnimateHeightTo(collapsed ? TitleBarHeight : (int)Block.Height);
         _view?.OnCollapsedChanged(collapsed);
+        _host.PersistLayout();
+    }
+
+    /// <summary>链接筐点击时打开独立居中窗口，重复点击不创建第二个弹窗。</summary>
+    public void OpenLinkPopup()
+    {
+        if (!Block.IsLink || _linkPopup != null) return;
+        _linkPopup = new LinkBasketPopupWindow(this, _host);
+        try { _linkPopup.Show(); }
+        catch (Exception ex)
+        {
+            Helpers.AppHost.LogError("OpenLinkPopup", ex);
+            _linkPopup.Dispose();
+            _linkPopup = null;
+            _host.NotifyError("打开收纳筐失败，请查看错误日志。");
+        }
+    }
+
+    public void OnLinkPopupClosed(LinkBasketPopupWindow popup)
+    {
+        if (_linkPopup == popup) _linkPopup = null;
+    }
+
+    /// <summary>按行列重新计算小盒尺寸；只能由右键规格菜单调用。</summary>
+    public void SetLinkPreviewSize(int rows, int columns)
+    {
+        if (!Block.IsLink) return;
+        Block.PreviewRows = rows;
+        Block.PreviewColumns = columns;
+        var scale = DpiHelper.WindowScale(Hwnd);
+        var area = DesktopEmbedService.GetNearestMonitorWorkArea(
+            (int)Block.X, (int)Block.Y, (int)Block.Width, (int)Block.Height);
+        var size = LinkBasketSize.Calculate(rows, columns, scale, area.W, area.H);
+        var margin = Math.Max((int)(12 * scale), 12);
+        var x = Math.Clamp((int)Block.X, area.X + margin,
+            Math.Max(area.X + margin, area.X + area.W - size.Width - margin));
+        var y = Math.Clamp((int)Block.Y, area.Y + margin,
+            Math.Max(area.Y + margin, area.Y + area.H - size.Height - margin));
+        SetBoundsScreen(x, y, size.Width, size.Height);
+        _linkView?.RefreshItems();
         _host.PersistLayout();
     }
 
@@ -307,11 +400,19 @@ public class BlockWindow : IDisposable
             // z 序钉死：任何来源（系统/激活/自身误用）想把块抬离桌面宿主正上方时强制拉回
             DesktopEmbedService.PinZOrderAboveHost(lParam, _hostHwnd);
         }
+        else if (msg == 0x02E0 /* WM_DPICHANGED */ && Block.IsLink)
+        {
+            // 跨显示器后用目标屏 DPI 重新计算小盒规格，仍不允许拖边自由缩放。
+            _source?.Dispatcher.BeginInvoke(() =>
+                SetLinkPreviewSize(Block.PreviewRows, Block.PreviewColumns));
+        }
         return IntPtr.Zero;
     }
 
     private void DisposeSource()
     {
+        _linkPopup?.Dispose();
+        _linkPopup = null;
         if (_source != null)
         {
             BackdropService.Clear(_source.Handle);
@@ -319,6 +420,7 @@ public class BlockWindow : IDisposable
             _source.Dispose();
             _source = null;
             _view = null;
+            _linkView = null;
         }
     }
 
