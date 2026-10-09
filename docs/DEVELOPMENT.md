@@ -91,7 +91,7 @@ docs/
 
 升级时仅复制旧配置文件，不自动移动用户收纳文件。即使 `settings.json` 已使用新的收纳根目录，历史布局的盒目录也可能仍在 `%USERPROFILE%\DesktopBlocks`；现有链接筐允许加载这个已知旧根目录，重命名只在原目录内进行。
 
-自动烟测使用 `scripts/run-test-sandbox.ps1`。脚本设置 `DESKTOPICONSSTORAGE_TEST_ROOT`，把桌面、收纳目录、配置、实例锁和构建产物隔离到 `artifacts/test-sandbox`；自动测试拒绝沙盒外输入，也不写开机自启注册表。手动体验直接运行当前分支的 Debug 程序，使用真实桌面与现有配置。`DESKTOPICONSSTORAGE_CONFIG_DIR` 可用于一般配置重定向，但不代替自动烟测的完整文件隔离。
+2026-10-09 起不再有独立测试沙盒：`RuntimePaths` 机制、`scripts/run-test-sandbox.ps1` 与 `tests/ShortcutBasketSmoke` 已移除。开发与 AI 辅助验证统一遵守仓库根目录 `AGENTS.md` 规则一——禁止使用真实桌面或收纳目录中的文件，必须在 `%TEMP%` 下自建模拟文件并在验证后清理。`DESKTOPICONSSTORAGE_CONFIG_DIR` 仍可用于一般配置重定向。
 
 ### 4.1 settings.json
 
@@ -164,11 +164,11 @@ dotnet build DesktopIconsStorage.sln
 .\src\App\bin\Debug\net8.0-windows\DesktopIconsStorage.exe
 ```
 
-以上直接运行方式使用真实桌面和配置，适合用户亲自验证。编码烟测请运行 `scripts/run-test-sandbox.ps1`，只使用脚本生成的测试文件与应用图标副本。
+以上直接运行方式使用真实桌面和配置，仅适合用户亲自验证；AI 辅助开发不得使用此方式操作真实文件（见 `AGENTS.md`）。
 
 ### 6.2 Release
 
-发布构建只能在功能合并到 `main` 后执行；功能分支的日常验证使用上面的隔离脚本。
+发布构建只能在功能合并到 `main` 后执行；功能分支的日常验证只做 Debug/Release 编译检查。
 
 ```powershell
 dotnet build DesktopIconsStorage.sln -c Release
@@ -234,18 +234,15 @@ git push origin v0.4.0
 
 ## 9. 测试
 
-链接筐提供独立烟测；发布前仍需执行以下手工检查。
+2026-10-09 起独立烟测项目与沙盒脚本已移除；构建检查以编译通过为准，行为验证由用户在真实环境手动完成，AI 辅助验证只能用 `%TEMP%` 下的自建模拟文件（见 `AGENTS.md`）。
 
 ### 9.1 构建检查
 
 ```powershell
-.\scripts\run-test-sandbox.ps1
-$testBin = Join-Path (Get-Location) 'artifacts\test-sandbox\SmokeBin'
-dotnet build tests\ShortcutBasketSmoke\ShortcutBasketSmoke.csproj "-p:OutputPath=$testBin"
-& (Join-Path $testBin 'ShortcutBasketSmoke.exe')
+dotnet build DesktopIconsStorage.sln -c Release
 ```
 
-测试脚本把 Debug 构建放到独立目录，即使正式应用正在运行，也不会覆盖它占用的 DLL。功能分支不执行发布脚本；合并到 `main` 后才做 Release 构建与安装器检查。
+功能分支不执行发布脚本；合并到 `main` 后才做 Release 构建与安装器检查。
 
 ### 9.2 发布检查
 

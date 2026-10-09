@@ -12,7 +12,6 @@ public static class LinkBasketService
         IEnumerable<string> sourcePaths)
     {
         if (!block.IsLink) throw new IOException("目标不是快捷方式收纳筐。");
-        RuntimePaths.EnsureSandboxPath(block.FolderPath);
         Directory.CreateDirectory(block.FolderPath);
         var errors = new List<string>();
         var added = 0;
@@ -22,7 +21,6 @@ public static class LinkBasketService
             try
             {
                 var fullPath = Path.GetFullPath(source);
-                RuntimePaths.EnsureSandboxPath(fullPath);
                 if (!File.Exists(fullPath) && !Directory.Exists(fullPath))
                     throw new IOException("源项目不存在。");
                 if (IsInOrContainsBlock(fullPath, block.FolderPath))

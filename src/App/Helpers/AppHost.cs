@@ -49,9 +49,6 @@ public class AppHost : IDisposable
 
             Log("Run: loading settings");
             Settings = JsonStore.Load<AppSettings>(JsonStore.SettingsPath);
-            // 测试运行强制使用隔离目录，防止旧设置指向真实收纳数据。
-            if (RuntimePaths.SandboxStorageRoot is { } sandboxStorage)
-                Settings.StorageRoot = sandboxStorage;
             ThemeResourceManager.Apply(ThemePalette, AccentColor);
             AutostartService.RecordStorageRoot(Settings.StorageRoot);
             Blocks = new BlockManager(Settings);
@@ -485,8 +482,6 @@ public class AppHost : IDisposable
         {
             JsonStore.MigrateLegacyFiles();
             var settings = JsonStore.Load<AppSettings>(JsonStore.SettingsPath);
-            if (RuntimePaths.SandboxStorageRoot is { } sandboxStorage)
-                settings.StorageRoot = sandboxStorage;
             var manager = new BlockManager(settings);
             manager.Load();
             var blockFolders = manager.Blocks.Select(block => block.FolderPath).ToList();
@@ -517,7 +512,6 @@ public class AppHost : IDisposable
     /// <summary>只删除确认为空的目录，绝不递归清除未知或隐藏的用户文件。</summary>
     private static void DeleteDirectoryIfEmpty(string path)
     {
-        RuntimePaths.EnsureSandboxPath(path);
         if (!Directory.Exists(path)) return;
         if (!Directory.EnumerateFileSystemEntries(path).Any())
             Directory.Delete(path, recursive: false);

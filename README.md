@@ -87,11 +87,7 @@ cd desktop-icons-storage
 dotnet build DesktopIconsStorage.sln
 ```
 
-编码验证请运行隔离脚本。它只准备测试文件和仓库自带应用图标副本，不读取真实桌面图标文件：
-
-```powershell
-.\scripts\run-test-sandbox.ps1
-```
+构建验证以 `dotnet build` 通过为准。
 
 需要亲自用桌面文件体验时，直接运行当前分支的 Debug 程序：
 
