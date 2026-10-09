@@ -289,14 +289,15 @@ public class AppHost : IDisposable
     public void RecordDesktopPositions(Block block, IEnumerable<string> paths)
     {
         if (block.IsLink) return;
-        foreach (var p in paths)
-        {
-            if (DesktopLocations.GetOrigin(p) == DesktopOrigin.Other) continue;
-            var name = Path.GetFileName(p.TrimEnd(Path.DirectorySeparatorChar));
-            if (string.IsNullOrEmpty(name)) continue;
-            if (DesktopIconPositionService.TryGetIconPosition(name, out var pt))
-                block.DesktopPositions[name] = new[] { pt.X, pt.Y };
-        }
+        var names = paths
+            .Where(p => DesktopLocations.GetOrigin(p) != DesktopOrigin.Other)
+            .Select(p => Path.GetFileName(p.TrimEnd(Path.DirectorySeparatorChar)))
+            .Where(n => !string.IsNullOrEmpty(n))
+            .ToList();
+        if (names.Count == 0) return;
+        // 单次全量枚举批量取坐标，避免逐项枚举给 Explorer 制造消息洪峰。
+        foreach (var kv in DesktopIconPositionService.GetIconPositions(names))
+            block.DesktopPositions[kv.Key] = kv.Value;
     }
 
     /// <summary>还原后按快照异步归位桌面图标；已消费的坐标条目从布局中清除并保存。</summary>
@@ -305,8 +306,12 @@ public class AppHost : IDisposable
     {
         foreach (var b in consumedBlocks) b.DesktopPositions.Clear();
         Blocks.Save();
-        if (snapshot.Count > 0)
-            Task.Run(() => DesktopIconPositionService.RestorePositions(snapshot));
+        if (snapshot.Count == 0) return;
+        Task.Run(() =>
+        {
+            var (matched, total) = DesktopIconPositionService.RestorePositions(snapshot);
+            Log($"RestorePositions: matched {matched}/{total}");
+        });
     }
 
     /// <summary>汇总若干实体盒的坐标快照；同名时后者覆盖（同名文件桌面只显示一份）。</summary>
@@ -536,7 +541,8 @@ public class AppHost : IDisposable
                 manager.DeleteLinkFilesForUninstall(block);
             ShellNotifyService.NotifyFolderChanged(manager.DesktopPath);
             // 卸载还原也按移入前记录的坐标归位桌面图标（同步执行，失败不影响清理）。
-            DesktopIconPositionService.RestorePositions(positionSnapshot);
+            var (matched, total) = DesktopIconPositionService.RestorePositions(positionSnapshot);
+            Log($"CleanupForUninstall RestorePositions: matched {matched}/{total}");
 
             foreach (var folder in blockFolders)
                 DeleteDirectoryIfEmpty(folder);

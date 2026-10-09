@@ -244,10 +244,10 @@ internal static class NativeMethods
     internal const uint MEM_RELEASE = 0x8000;
     internal const uint PAGE_READWRITE = 0x04;
 
-    internal const uint LVM_GETITEMCOUNT = 0x1004;
-    internal const uint LVM_GETITEMPOSITION = 0x1010;
-    internal const uint LVM_SETITEMPOSITION = 0x1011;
-    internal const uint LVM_GETITEMTEXTW = 0x1073;
+    internal const uint LVM_GETITEMCOUNT = 0x1004;   // LVM_FIRST + 4
+    internal const uint LVM_SETITEMPOSITION = 0x100F; // LVM_FIRST + 15：lParam 打包 MAKELPARAM(x, y)
+    internal const uint LVM_GETITEMPOSITION = 0x1010; // LVM_FIRST + 16：lParam 为远端 POINT 指针
+    internal const uint LVM_GETITEMTEXTW = 0x1073;   // LVM_FIRST + 115
     internal const uint LVIF_TEXT = 0x0001;
 
     [StructLayout(LayoutKind.Sequential)]
