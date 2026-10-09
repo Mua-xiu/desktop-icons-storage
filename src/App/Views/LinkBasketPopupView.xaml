@@ -97,15 +97,16 @@
                             <DataTemplate.Triggers>
                                 <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
                                     <Setter TargetName="ItemName" Property="TextWrapping" Value="Wrap"/>
-                                    <Setter TargetName="ItemName" Property="TextTrimming" Value="None"/>
-                                    <Setter TargetName="ItemName" Property="MaxHeight" Value="1000"/>
-                                    <Setter TargetName="ItemName" Property="Background" Value="#D9222B3C"/>
+                                    <Setter TargetName="ItemName" Property="TextTrimming" Value="CharacterEllipsis"/>
+                                    <Setter TargetName="ItemName" Property="MaxHeight" Value="40"/>
                                 </DataTrigger>
                             </DataTemplate.Triggers>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                     <ListBox.ItemContainerStyle>
                         <Style TargetType="ListBoxItem">
+                            <!-- 容器顶对齐：槽位仍按 92x104 参与分页，hover/选中底色只包住实际内容。 -->
+                            <Setter Property="VerticalAlignment" Value="Top"/>
                             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
                             <Setter Property="Template">
                                 <Setter.Value>
