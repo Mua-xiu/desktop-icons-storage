@@ -18,8 +18,8 @@ namespace DesktopIconsStorage.Platform.Services;
 public static class DesktopIconPositionService
 {
     private const int TextCapacity = 260;
-    private const int RestoreRounds = 3;                 // 每轮一次全量枚举，轮间等待 Explorer 就位
-    private static readonly int[] RoundDelaysMs = { 800, 1500, 2000 };
+    // 大批量还原时 Explorer 逐个把图标加回视图，间隔递增地等待，上限约 15 秒。
+    private const int MaxRestoreRounds = 12;
 
     /// <summary>批量读取若干文件名对应的桌面图标坐标；单次全量枚举，找不到的不出现在结果里。</summary>
     public static Dictionary<string, int[]> GetIconPositions(IReadOnlyCollection<string> fileNames)
@@ -45,7 +45,8 @@ public static class DesktopIconPositionService
 
     /// <summary>
     /// 还原后批量归位，返回 (matched, total)。
-    /// 轮次制：每轮等待后只枚举一次整表，能对上的全部归位；对不上的留到下一轮，
+    /// 自适应轮次：大批量还原时 Explorer 把图标逐个加回视图可能耗时很久，
+    /// 只要还有未归位的项就继续等（间隔递增），直到全部归位或达到上限；
     /// 越出当前虚拟屏幕或坐标非法的项立即放弃（显示器布局可能已变化）。
     /// </summary>
     public static (int Matched, int Total) RestorePositions(IReadOnlyDictionary<string, int[]> positions)
@@ -58,9 +59,11 @@ public static class DesktopIconPositionService
         WithRemoteMemory(lv, (process, remote) =>
         {
             var pending = new Dictionary<string, int[]>(positions, StringComparer.OrdinalIgnoreCase);
-            for (var round = 0; round < RestoreRounds && pending.Count > 0; round++)
+            var delay = 800;
+            for (var round = 0; round < MaxRestoreRounds && pending.Count > 0; round++)
             {
-                Thread.Sleep(RoundDelaysMs[round]);
+                Thread.Sleep(delay);
+                delay = Math.Min(delay + 400, 2000);
                 var indexByName = EnumerateIconIndices(lv, process, remote);
                 foreach (var name in pending.Keys.ToList())
                 {

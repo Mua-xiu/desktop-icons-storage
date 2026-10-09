@@ -426,24 +426,17 @@ public class AppHost : IDisposable
 
     public void RestoreAllWithConfirm()
     {
-        var linkCount = Blocks.Blocks.Where(b => b.IsLink)
-            .Sum(b => Blocks.EnumerateItems(b).Count);
         var moveCount = Blocks.Blocks.Where(b => !b.IsLink)
             .Sum(b => Blocks.EnumerateItems(b).Count);
+        // 2026-10-09：链接筐不参与一键还原——筐内只是引用，原件从未离开原位，
+        // 不存在"还原"语义；清空 .lnk 只会损失用户的收纳结果。
         var result = MessageBox.Show(
-            $"实体盒 {moveCount} 项移回桌面；链接筐 {linkCount} 个快捷方式移入回收站。\n" +
-            "快捷方式目标保持原位，收纳盒会保留。是否继续？",
+            $"将把实体盒中的 {moveCount} 个项目移回桌面；快捷方式收纳筐不受影响。\n是否继续？",
             "一键全部还原", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (result != MessageBoxResult.Yes) return;
 
         try
         {
-            foreach (var block in Blocks.Blocks.Where(b => b.IsLink))
-            {
-                var links = Blocks.GetValidatedLinkFiles(block);
-                if (!ShellFileService.RecycleDelete(IntPtr.Zero, links))
-                    throw new IOException($"清空链接筐失败：{block.Name}");
-            }
             var positionSnapshot = SnapshotPositions(Blocks.Blocks.Where(b => !b.IsLink));
             Blocks.RestoreAllToDesktop();
             // 通知 Shell 刷新桌面与所有块文件夹
