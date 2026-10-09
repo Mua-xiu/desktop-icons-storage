@@ -48,10 +48,15 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                    <!-- 2026-10-09：桌面文字统一白字 + 深色投影（Windows 桌面图标惯例），
+                         不再跟随主题色板——浅色主题 + 深色壁纸时黑字无法辨认。 -->
                     <TextBlock x:Name="TitleText" VerticalAlignment="Center" FontWeight="SemiBold">
                         <TextBlock.Foreground>
                             <SolidColorBrush Color="White"/>
                         </TextBlock.Foreground>
+                        <TextBlock.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="3" ShadowDepth="1" Opacity="0.75" RenderingBias="Performance"/>
+                        </TextBlock.Effect>
                     </TextBlock>
                     <TextBox x:Name="TitleEditor" Visibility="Collapsed" Width="150"
                              VerticalAlignment="Center" Padding="2,1" FontSize="12"/>
@@ -59,7 +64,11 @@
 
                 <Border x:Name="CountBadge" Grid.Column="1" CornerRadius="8" Padding="7,1"
                         Margin="4,0,10,0" VerticalAlignment="Center" Background="#33000000">
-                    <TextBlock x:Name="CountText" FontSize="11" Foreground="#CCFFFFFF"/>
+                    <TextBlock x:Name="CountText" FontSize="11" Foreground="#E6FFFFFF">
+                        <TextBlock.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="3" ShadowDepth="1" Opacity="0.75" RenderingBias="Performance"/>
+                        </TextBlock.Effect>
+                    </TextBlock>
                 </Border>
             </Grid>
 
@@ -93,7 +102,11 @@
                             <TextBlock x:Name="ItemName" Text="{Binding Name}" FontSize="11" TextAlignment="Center"
                                        TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
                                        MaxHeight="18" Margin="0,4,0,0"
-                                       Visibility="{Binding NamesVisibility, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                       Visibility="{Binding NamesVisibility, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                <TextBlock.Effect>
+                                    <DropShadowEffect Color="Black" BlurRadius="3" ShadowDepth="1" Opacity="0.75" RenderingBias="Performance"/>
+                                </TextBlock.Effect>
+                            </TextBlock>
                         </StackPanel>
                         <DataTemplate.Triggers>
                             <!-- 2026-09-24：旧模式名称默认单行，选中后展开最多两行，超出以省略号收尾。 -->
