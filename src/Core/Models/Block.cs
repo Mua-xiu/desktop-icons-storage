@@ -41,6 +41,9 @@ public class Block : INotifyPropertyChanged
     /// <summary>块内项目的手动顺序，保存文件名而非完整路径，避免块重命名后顺序失效。</summary>
     public List<string> ItemOrder { get; set; } = new();
 
+    /// <summary>实体盒项目移入前的原桌面图标坐标（桌面 ListView 视图坐标）；还原归位后移除对应条目。</summary>
+    public Dictionary<string, int[]> DesktopPositions { get; set; } = new();
+
     public double X { get => _x; set => SetField(ref _x, value); }
     public double Y { get => _y; set => SetField(ref _y, value); }
     public double Width { get => _width; set => SetField(ref _width, value); }

@@ -821,6 +821,7 @@ public partial class BlockView : UserControl
                     .Where(p => File.Exists(p) || Directory.Exists(p))
                     .Select(p => (Path: p, IsDir: Directory.Exists(p)))
                     .ToList();
+                _host.RecordDesktopPositions(_window.Block, srcList.Select(x => x.Path));
                 var movedPaths = _host.Blocks.MoveInto(_window.Block, srcList.Select(x => x.Path));
                 ShellNotifyService.NotifyMoved(srcList.Zip(movedPaths,
                     (source, destination) => (source.Path, source.IsDir, destination)));

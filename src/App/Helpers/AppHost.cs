@@ -274,6 +274,7 @@ public class AppHost : IDisposable
                 .ToList();
             if (srcList.Count > 0)
             {
+                RecordDesktopPositions(w.Block, srcList.Select(x => x.Path));
                 var movedPaths = Blocks.MoveInto(w.Block, srcList.Select(x => x.Path));
                 // 主动通知 Shell：桌面上的原图标立即消失（否则会残留"幽灵图标"）
                 ShellNotifyService.NotifyMoved(srcList.Zip(movedPaths,
@@ -282,6 +283,40 @@ public class AppHost : IDisposable
         }
         catch (Exception ex) { NotifyError($"移动失败：{ex.Message}"); }
         w.RefreshViewAfterInternalChange();
+    }
+
+    /// <summary>移入实体盒前记录桌面图标的原坐标（路线图第 4 项），还原时按名归位。</summary>
+    public void RecordDesktopPositions(Block block, IEnumerable<string> paths)
+    {
+        if (block.IsLink) return;
+        foreach (var p in paths)
+        {
+            if (DesktopLocations.GetOrigin(p) == DesktopOrigin.Other) continue;
+            var name = Path.GetFileName(p.TrimEnd(Path.DirectorySeparatorChar));
+            if (string.IsNullOrEmpty(name)) continue;
+            if (DesktopIconPositionService.TryGetIconPosition(name, out var pt))
+                block.DesktopPositions[name] = new[] { pt.X, pt.Y };
+        }
+    }
+
+    /// <summary>还原后按快照异步归位桌面图标；已消费的坐标条目从布局中清除并保存。</summary>
+    private void ApplyRestoredPositions(Dictionary<string, int[]> snapshot,
+        IEnumerable<Block> consumedBlocks)
+    {
+        foreach (var b in consumedBlocks) b.DesktopPositions.Clear();
+        Blocks.Save();
+        if (snapshot.Count > 0)
+            Task.Run(() => DesktopIconPositionService.RestorePositions(snapshot));
+    }
+
+    /// <summary>汇总若干实体盒的坐标快照；同名时后者覆盖（同名文件桌面只显示一份）。</summary>
+    private static Dictionary<string, int[]> SnapshotPositions(IEnumerable<Block> blocks)
+    {
+        var snapshot = new Dictionary<string, int[]>();
+        foreach (var b in blocks)
+            foreach (var kv in b.DesktopPositions)
+                snapshot[kv.Key] = kv.Value;
+        return snapshot;
     }
 
     /// <summary>二次确认后，将收纳盒中的项目移动到指定子文件夹。</summary>
@@ -365,8 +400,10 @@ public class AppHost : IDisposable
                     Blocks.DeleteBlock(w.Block, dlg.TargetBlock);
                 else
                 {
+                    var positionSnapshot = SnapshotPositions(new[] { w.Block });
                     Blocks.DeleteBlock(w.Block, null);
                     ShellNotifyService.NotifyFolderChanged(Blocks.DesktopPath);
+                    ApplyRestoredPositions(positionSnapshot, new[] { w.Block });
                 }
             }
             deleted = true;
@@ -402,10 +439,12 @@ public class AppHost : IDisposable
                 if (!ShellFileService.RecycleDelete(IntPtr.Zero, links))
                     throw new IOException($"清空链接筐失败：{block.Name}");
             }
+            var positionSnapshot = SnapshotPositions(Blocks.Blocks.Where(b => !b.IsLink));
             Blocks.RestoreAllToDesktop();
             // 通知 Shell 刷新桌面与所有块文件夹
             ShellNotifyService.NotifyFolderChanged(Blocks.DesktopPath);
             foreach (var b in Blocks.Blocks) ShellNotifyService.NotifyFolderChanged(b.FolderPath);
+            ApplyRestoredPositions(positionSnapshot, Blocks.Blocks.Where(b => !b.IsLink));
         }
         catch (Exception ex) { NotifyError($"还原失败：{ex.Message}"); }
         foreach (var w in Windows) w.RefreshView();
@@ -485,11 +524,19 @@ public class AppHost : IDisposable
             var manager = new BlockManager(settings);
             manager.Load();
             var blockFolders = manager.Blocks.Select(block => block.FolderPath).ToList();
+            var positionSnapshot = new Dictionary<string, int[]>();
+            foreach (var b in manager.Blocks.Where(b => !b.IsLink))
+                foreach (var kv in b.DesktopPositions)
+                    positionSnapshot[kv.Key] = kv.Value;
 
             manager.RestoreAllToDesktop();
+            foreach (var b in manager.Blocks) b.DesktopPositions.Clear();
+            manager.Save();
             foreach (var block in manager.Blocks.Where(b => b.IsLink))
                 manager.DeleteLinkFilesForUninstall(block);
             ShellNotifyService.NotifyFolderChanged(manager.DesktopPath);
+            // 卸载还原也按移入前记录的坐标归位桌面图标（同步执行，失败不影响清理）。
+            DesktopIconPositionService.RestorePositions(positionSnapshot);
 
             foreach (var folder in blockFolders)
                 DeleteDirectoryIfEmpty(folder);
