@@ -58,7 +58,6 @@ public partial class BlockView : UserControl
         WireEvents();
         RefreshTitle();
         IconList.Loaded += (_, _) => UpdateCellSize();
-        SurfaceRoot.SizeChanged += (_, _) => UpdateRoundedClip();
 
         // NOACTIVATE 窗口：点击不会自动激活/聚焦，需要程序化处理以支持快捷键与重命名
         RootBorder.PreviewMouseDown += (_, _) =>
@@ -67,17 +66,6 @@ public partial class BlockView : UserControl
             if (Mouse.DirectlyOver is DependencyObject d && IsDescendantOfIconList(d))
                 IconList.Focus();
         };
-    }
-
-    /// <summary>
-    /// WPF 的 Border 不会按 CornerRadius 裁剪子元素，因此给背景层补充真正的圆角几何裁剪。
-    /// 原生窗口区域负责最外层命中范围，这里负责消除毛玻璃图层的四角漏色。
-    /// </summary>
-    private void UpdateRoundedClip()
-    {
-        if (SurfaceRoot.ActualWidth <= 0 || SurfaceRoot.ActualHeight <= 0) return;
-        SurfaceRoot.Clip = new RectangleGeometry(
-            new Rect(0, 0, SurfaceRoot.ActualWidth, SurfaceRoot.ActualHeight), 7, 7);
     }
 
     /// <summary>直接设置 WrapPanel 单元格尺寸（模板内绑定不可靠，改走代码）。</summary>
@@ -821,7 +809,6 @@ public partial class BlockView : UserControl
                     .Where(p => File.Exists(p) || Directory.Exists(p))
                     .Select(p => (Path: p, IsDir: Directory.Exists(p)))
                     .ToList();
-                _host.RecordDesktopPositions(_window.Block, srcList.Select(x => x.Path));
                 var movedPaths = _host.Blocks.MoveInto(_window.Block, srcList.Select(x => x.Path));
                 ShellNotifyService.NotifyMoved(srcList.Zip(movedPaths,
                     (source, destination) => (source.Path, source.IsDir, destination)));

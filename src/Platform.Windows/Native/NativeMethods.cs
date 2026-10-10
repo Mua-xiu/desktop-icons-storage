@@ -151,37 +151,6 @@ internal static class NativeMethods
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
 
-    [DllImport("user32.dll", SetLastError = true)]
-    internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
-
-    // ---------- kernel32（仅用于桌面图标坐标读写这一拍板窄例外，见路线图第 4 项） ----------
-    [DllImport("kernel32.dll", SetLastError = true)]
-    internal static extern IntPtr OpenProcess(uint dwDesiredAccess,
-        [MarshalAs(UnmanagedType.Bool)] bool bInheritHandle, uint dwProcessId);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    internal static extern IntPtr VirtualAllocEx(IntPtr hProcess, IntPtr lpAddress,
-        UIntPtr dwSize, uint flAllocationType, uint flProtect);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    internal static extern bool VirtualFreeEx(IntPtr hProcess, IntPtr lpAddress,
-        UIntPtr dwSize, uint dwFreeType);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    internal static extern bool WriteProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress,
-        byte[] lpBuffer, UIntPtr nSize, out UIntPtr lpNumberOfBytesWritten);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    internal static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress,
-        byte[] lpBuffer, UIntPtr nSize, out UIntPtr lpNumberOfBytesRead);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    internal static extern bool CloseHandle(IntPtr hObject);
-
     [StructLayout(LayoutKind.Sequential)]
     internal struct MONITORINFO
     {
@@ -235,34 +204,6 @@ internal static class NativeMethods
     internal const ushort FOF_NOERRORUI = 0x0400;
 
     internal const int SW_SHOWNORMAL = 1;
-
-    // ---------- 进程内存与桌面 ListView 消息（坐标读写窄例外） ----------
-    internal const uint PROCESS_VM_OPERATION = 0x0008;
-    internal const uint PROCESS_VM_READ = 0x0010;
-    internal const uint PROCESS_VM_WRITE = 0x0020;
-    internal const uint MEM_COMMIT = 0x1000;
-    internal const uint MEM_RELEASE = 0x8000;
-    internal const uint PAGE_READWRITE = 0x04;
-
-    internal const uint LVM_GETITEMCOUNT = 0x1004;   // LVM_FIRST + 4
-    internal const uint LVM_SETITEMPOSITION = 0x100F; // LVM_FIRST + 15：lParam 打包 MAKELPARAM(x, y)
-    internal const uint LVM_GETITEMPOSITION = 0x1010; // LVM_FIRST + 16：lParam 为远端 POINT 指针
-    internal const uint LVM_GETITEMTEXTW = 0x1073;   // LVM_FIRST + 115
-    internal const uint LVIF_TEXT = 0x0001;
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct LVITEM
-    {
-        public uint mask;
-        public int iItem;
-        public int iSubItem;
-        public uint state;
-        public uint stateMask;
-        public IntPtr pszText;
-        public int cchTextMax;
-        public int iImage;
-        public IntPtr lParam;
-    }
 
     // ---------- 结构体 ----------
     [StructLayout(LayoutKind.Sequential)]

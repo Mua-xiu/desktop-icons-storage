@@ -31,6 +31,7 @@ public class BlockWindow : IDisposable
     private BlockView? _view;
     private LinkBasketTileView? _linkView;
     private LinkBasketPopupWindow? _linkPopup;
+    private LinkBasketTitleWindow? _linkTitle;
     private FolderWatchService? _watcher;
     private volatile bool _needsRecreate;
     private long _suppressWatcherUntilUtcTicks;
@@ -103,8 +104,7 @@ public class BlockWindow : IDisposable
 
         // HwndSource 首次创建不会经过 SetBounds；必须立即设置窗口区域，
         // 否则毛玻璃底层会从 WPF Border 的四个圆角漏出。
-        DesktopEmbedService.ApplyRoundedCorners(_source.Handle, (int)Block.Width, height,
-            Block.IsLink ? 12 : 8);
+        WindowChromeService.ApplySurface(_source.Handle, (int)Block.Width, height);
 
         // 创建后立刻钉到桌面图标视图正上方（否则默认在 z 序顶部，会盖住应用窗口）
         DesktopEmbedService.RaiseAboveDesktopIcons(_source.Handle);
@@ -113,6 +113,7 @@ public class BlockWindow : IDisposable
         _view?.OnCollapsedChanged(Block.Collapsed);
         _view?.RefreshItems();
         _linkView?.RefreshItems();
+        if (Block.IsLink) _linkTitle = new LinkBasketTitleWindow(this);
     }
 
     /// <summary>应用 DWM 亚克力 + 圆角裁剪（半径已修正，与 RootBorder 对齐）。</summary>
@@ -128,8 +129,8 @@ public class BlockWindow : IDisposable
                 BackdropService.BackdropKind.Acrylic;
             _linkView?.ApplyTheme(acrylic);
             _linkPopup?.ApplyTheme();
-            DesktopEmbedService.ApplyRoundedCorners(Hwnd,
-                (int)Block.Width, (int)Block.Height, 12);
+            WindowChromeService.ApplySurface(Hwnd,
+                (int)Block.Width, (int)Block.Height);
             return;
         }
         if (_view == null) return;
@@ -150,7 +151,7 @@ public class BlockWindow : IDisposable
         // DWM Acrylic 会在窗口区域之后建立底层材质；最后重新施加圆角，
         // 防止透明的 WPF 四角露出矩形 Acrylic 背景。
         var actualHeight = Block.Collapsed ? TitleBarHeight : _actualHeight;
-        DesktopEmbedService.ApplyRoundedCorners(Hwnd, (int)Block.Width, actualHeight, 8);
+        WindowChromeService.ApplySurface(Hwnd, (int)Block.Width, actualHeight);
 
     }
 
@@ -239,7 +240,7 @@ public class BlockWindow : IDisposable
         if (_source == null) return;
         var actual = Block.Collapsed ? TitleBarHeight : h;
         if (!DesktopEmbedService.SetBounds(Hwnd, (int)Block.X, (int)Block.Y,
-                w, actual, Block.IsLink ? 12 : 8))
+                w, actual))
         {
             Helpers.AppHost.Log($"SetSizeScreen FAILED: hwnd={Hwnd}, w={w}, h={actual}");
             return;
@@ -254,8 +255,7 @@ public class BlockWindow : IDisposable
     {
         if (_source == null) return;
         var actual = Block.Collapsed ? TitleBarHeight : h;
-        if (!DesktopEmbedService.SetBounds(Hwnd, x, y, w, actual,
-                Block.IsLink ? 12 : 8))
+        if (!DesktopEmbedService.SetBounds(Hwnd, x, y, w, actual))
         {
             Helpers.AppHost.Log($"SetBoundsScreen FAILED: hwnd={Hwnd}, x={x}, y={y}, w={w}, h={actual}");
             return;
@@ -411,6 +411,8 @@ public class BlockWindow : IDisposable
 
     private void DisposeSource()
     {
+        _linkTitle?.Dispose();
+        _linkTitle = null;
         _linkPopup?.Dispose();
         _linkPopup = null;
         if (_source != null)

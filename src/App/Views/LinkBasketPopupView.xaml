@@ -1,6 +1,7 @@
 <UserControl x:Class="DesktopIconsStorage.App.Views.LinkBasketPopupView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:helpers="clr-namespace:DesktopIconsStorage.App.Helpers"
              FontFamily="Segoe UI Variable Text, Microsoft YaHei UI" FontSize="13">
     <UserControl.Resources>
         <!-- 新模式窗口固定深色，避免应用主题切换改变开关和文字的对比度。 -->
@@ -38,7 +39,7 @@
             </Setter>
         </Style>
     </UserControl.Resources>
-    <Border x:Name="RootBorder" Background="Transparent">
+    <helpers:RoundedSurface x:Name="RootBorder" Background="Transparent" BorderBrush="#33FFFFFF">
         <Grid>
             <Border x:Name="TintLayer" Background="#33202020"/>
             <Grid x:Name="ContentGrid">
@@ -145,5 +146,5 @@
                             Visibility="Collapsed"/>
             </Grid>
         </Grid>
-    </Border>
+    </helpers:RoundedSurface>
 </UserControl>

@@ -101,7 +101,7 @@ dotnet build src\App\DesktopIconsStorage.App.csproj -c Debug
 生成自包含便携版和安装器：
 
 ```powershell
-.\scripts\build-release.ps1 -Version 0.5.0
+.\scripts\build-release.ps1 -Version 0.6.0
 ```
 
 安装器构建需要 Inno Setup 6；使用 `-SkipInstaller` 可以只生成便携版。仅在功能合并到 `main` 后，才允许从 `main` 或已合并提交的 `v*` 标签构建发布包；功能分支的提交和推送不会发布新版本。

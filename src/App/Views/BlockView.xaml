@@ -1,6 +1,7 @@
 <UserControl x:Class="DesktopIconsStorage.App.Views.BlockView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:helpers="clr-namespace:DesktopIconsStorage.App.Helpers"
              FontFamily="Segoe UI Variable Text, Microsoft YaHei UI"
              FontSize="12">
     <UserControl.Resources>
@@ -26,10 +27,10 @@
         </Style>
     </UserControl.Resources>
 
-    <Border x:Name="RootBorder" CornerRadius="8"
-            BorderThickness="1" BorderBrush="#33FFFFFF" Background="Transparent">
+    <helpers:RoundedSurface x:Name="RootBorder"
+            BorderBrush="#33FFFFFF" Background="Transparent">
         <Grid x:Name="SurfaceRoot">
-            <!-- 自绘毛玻璃底层：壁纸裁剪模糊 + 主题色叠加（圆角由 RootBorder 裁剪，角部干净） -->
+            <!-- 背景区：共用外框裁剪叠色与内容，原生材质由窗口区域裁剪。 -->
             <Image x:Name="FrostImage" Stretch="Fill" Visibility="Collapsed"
                    RenderOptions.BitmapScalingMode="Linear"/>
             <Border x:Name="FrostTint"/>
@@ -179,5 +180,5 @@
                    Cursor="SizeNESW" Opacity="0" DragDelta="OnResizeThumb" DragCompleted="OnResizeCompleted"/>
             </Grid>
         </Grid>
-    </Border>
+    </helpers:RoundedSurface>
 </UserControl>

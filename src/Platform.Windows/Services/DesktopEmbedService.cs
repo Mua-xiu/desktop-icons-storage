@@ -75,17 +75,21 @@ public static class DesktopEmbedService
         NativeMethods.SetWindowPos(hwnd, IntPtr.Zero, screenX, screenY, 0, 0,
             NativeMethods.SWP_NOSIZE | NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOACTIVATE);
 
+    /// <summary>定位透明伴随标题，保留其完整矩形区域，不施加收纳盒材质和圆角。</summary>
+    public static bool SetOverlayBounds(IntPtr hwnd, int x, int y, int width, int height) =>
+        NativeMethods.SetWindowPos(hwnd, IntPtr.Zero, x, y, width, height,
+            NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOACTIVATE);
+
     /// <summary>
     /// 以屏幕坐标设置窗口位置与尺寸，但保留创建时已经确定的桌面 z 序。
     /// 几何更新不能再混入桌面图标子窗口作为插入点，否则失败时移动、折叠和缩放会同时失效。
     /// </summary>
-    public static bool SetBounds(IntPtr hwnd, int screenX, int screenY, int w, int h,
-        int cornerRadiusDip = 8)
+    public static bool SetBounds(IntPtr hwnd, int screenX, int screenY, int w, int h)
     {
         var updated = NativeMethods.SetWindowPos(hwnd, IntPtr.Zero, screenX, screenY, w, h,
             NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOACTIVATE);
         if (!updated) return false;
-        ApplyRoundedCorners(hwnd, w, h, cornerRadiusDip);
+        WindowChromeService.ApplySurface(hwnd, w, h);
         return true;
     }
 
@@ -93,48 +97,6 @@ public static class DesktopEmbedService
     public static void RaiseAboveDesktopIcons(IntPtr hwnd) =>
         NativeMethods.SetWindowPos(hwnd, GetDesktopIconView(), 0, 0, 0, 0,
             NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE | NativeMethods.SWP_NOACTIVATE);
-
-    /// <summary>
-    /// 用窗口区域裁剪出圆角，并与各视图 RootBorder 的实际半径保持一致。
-    /// </summary>
-    public static void ApplyRoundedCorners(IntPtr hwnd, int w, int h, int cornerRadiusDip = 8)
-    {
-        if (w <= 0 || h <= 0) return;
-
-        // Acrylic 由 DWM 在 WPF 内容下方绘制，仅裁剪前景内容无法挡住四个方角；
-        // 先声明系统圆角偏好，再用窗口区域作旧系统与无边框弹窗的可靠兜底。
-        try
-        {
-            int preference = NativeMethods.DWMWCP_ROUND;
-            NativeMethods.DwmSetWindowAttribute(
-                hwnd, NativeMethods.DWMWA_WINDOW_CORNER_PREFERENCE, ref preference, sizeof(int));
-
-            // DWM Acrylic 会为无边框弹窗额外绘制一圈矩形系统描边；关闭它，
-            // 统一使用 BlockView 自己的圆角描边，避免四角出现亮色遮挡块。
-            int borderColor = NativeMethods.DWMWA_COLOR_NONE;
-            NativeMethods.DwmSetWindowAttribute(
-                hwnd, NativeMethods.DWMWA_BORDER_COLOR, ref borderColor, sizeof(int));
-        }
-        catch { /* Windows 10 等旧系统继续使用窗口区域裁剪 */ }
-
-        var ellipse = (int)(2 * cornerRadiusDip * DpiHelper.WindowScale(hwnd));
-        var rgn = NativeMethods.CreateRoundRectRgn(0, 0, w, h, ellipse, ellipse);
-        // SetWindowRgn 后区域归系统所有，不需要也不能 DeleteObject
-        NativeMethods.SetWindowRgn(hwnd, rgn, true);
-    }
-
-    /// <summary>2026-09-24：弹窗交给 DWM 绘制单层圆角，清除会阻止系统圆角的自定义窗口区域。</summary>
-    public static void ApplySystemRoundedCorners(IntPtr hwnd)
-    {
-        NativeMethods.SetWindowRgn(hwnd, IntPtr.Zero, true);
-        try
-        {
-            int preference = NativeMethods.DWMWCP_ROUND;
-            NativeMethods.DwmSetWindowAttribute(
-                hwnd, NativeMethods.DWMWA_WINDOW_CORNER_PREFERENCE, ref preference, sizeof(int));
-        }
-        catch { /* 旧系统忽略圆角偏好 */ }
-    }
 
     /// <summary>NOACTIVATE 窗口需要程序化聚焦才能接收键盘输入。</summary>
     public static void FocusWindow(IntPtr hwnd) => NativeMethods.SetFocus(hwnd);
