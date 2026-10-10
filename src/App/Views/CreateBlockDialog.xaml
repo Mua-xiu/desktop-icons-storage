@@ -12,6 +12,10 @@
         <TextBlock Text="收纳模式" FontWeight="SemiBold" Margin="0,0,0,10"/>
         <RadioButton x:Name="MoveMode" Content="实体收纳盒：拖入时移动真实文件"
                      IsChecked="True" GroupName="Mode" Margin="0,0,0,9"/>
+        <!-- OneDrive 语义明示：实体移动会让文件退出云同步范围（2026-10-09 路线图第 2 项）。 -->
+        <TextBlock x:Name="MoveModeNote" Foreground="{DynamicResource TextSecondary}" FontSize="12"
+                   TextWrapping="Wrap" Margin="22,0,0,9"
+                   Text="若桌面由 OneDrive 同步，移入的文件将退出同步范围，还原时恢复。"/>
         <RadioButton x:Name="LinkMode" Content="快捷方式收纳筐：原文件保持原位"
                      GroupName="Mode" Margin="0,0,0,14"/>
         <TextBlock Text="模式创建后不可切换。" Foreground="{DynamicResource TextSecondary}"

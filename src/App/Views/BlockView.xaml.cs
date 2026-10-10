@@ -58,7 +58,6 @@ public partial class BlockView : UserControl
         WireEvents();
         RefreshTitle();
         IconList.Loaded += (_, _) => UpdateCellSize();
-        SurfaceRoot.SizeChanged += (_, _) => UpdateRoundedClip();
 
         // NOACTIVATE 窗口：点击不会自动激活/聚焦，需要程序化处理以支持快捷键与重命名
         RootBorder.PreviewMouseDown += (_, _) =>
@@ -67,17 +66,6 @@ public partial class BlockView : UserControl
             if (Mouse.DirectlyOver is DependencyObject d && IsDescendantOfIconList(d))
                 IconList.Focus();
         };
-    }
-
-    /// <summary>
-    /// WPF 的 Border 不会按 CornerRadius 裁剪子元素，因此给背景层补充真正的圆角几何裁剪。
-    /// 原生窗口区域负责最外层命中范围，这里负责消除毛玻璃图层的四角漏色。
-    /// </summary>
-    private void UpdateRoundedClip()
-    {
-        if (SurfaceRoot.ActualWidth <= 0 || SurfaceRoot.ActualHeight <= 0) return;
-        SurfaceRoot.Clip = new RectangleGeometry(
-            new Rect(0, 0, SurfaceRoot.ActualWidth, SurfaceRoot.ActualHeight), 7, 7);
     }
 
     /// <summary>直接设置 WrapPanel 单元格尺寸（模板内绑定不可靠，改走代码）。</summary>
@@ -170,17 +158,17 @@ public partial class BlockView : UserControl
     public void ApplyTheme(bool dark, Color accent, ThemePalette palette, byte backdropAlpha, bool glassEnabled)
     {
         _dark = dark;
-        var fgBrush = new SolidColorBrush(palette.TextPrimary);
+        // 2026-10-09：桌面文字（标题/计数/图标名称）统一白字，不再跟随主题色板。
+        // 盒子表面是 DWM 亚克力与壁纸的混合色，浅色主题叠深色壁纸时色板黑字无法辨认；
+        // 白字 + XAML 深色投影在任何壁纸上可读，与链接筐小盒的硬编码白字保持一致。
+        var fgBrush = Brushes.White;
 
         // 窗口本身全透明：视觉完全由 FrostImage + FrostTint 提供，圆角由 RootBorder 干净裁剪
         RootBorder.Background = Brushes.Transparent;
         TitleText.Foreground = fgBrush;
         IconList.Foreground = fgBrush;
-        CountText.Foreground = new SolidColorBrush(
-            dark ? Color.FromArgb(0xCC, 255, 255, 255) : Color.FromArgb(0xCC, 0, 0, 0));
-        CountBadge.Background = new SolidColorBrush(dark
-            ? Color.FromArgb(0x66, palette.ControlBackground.R, palette.ControlBackground.G, palette.ControlBackground.B)
-            : Color.FromArgb(0x55, 0, 0, 0));
+        CountText.Foreground = new SolidColorBrush(Color.FromArgb(0xE6, 255, 255, 255));
+        CountBadge.Background = new SolidColorBrush(Color.FromArgb(0x66, 0, 0, 0));
         TitleBar.Background = new SolidColorBrush(Color.FromArgb(
             dark ? (byte)0x70 : (byte)0x58,
             palette.CardBackground.R, palette.CardBackground.G, palette.CardBackground.B));

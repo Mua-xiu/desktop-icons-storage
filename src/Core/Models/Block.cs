@@ -12,6 +12,7 @@ public class Block : INotifyPropertyChanged
 {
     private string _name = "新建收纳盒";
     private bool _collapsed;
+    private bool _showBlockName = true; // 旧布局缺少此字段时继续显示盒子名称。
     private double _x, _y, _width = 372, _height = 300;
 
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -37,6 +38,13 @@ public class Block : INotifyPropertyChanged
 
     /// <summary>本块是否显示图标名称；null = 跟随全局设置。</summary>
     public bool? ShowIconNames { get; set; }
+
+    /// <summary>快捷方式收纳筐是否显示盒子外部名称，与项目名称开关独立。</summary>
+    public bool ShowBlockName
+    {
+        get => _showBlockName;
+        set => SetField(ref _showBlockName, value);
+    }
 
     /// <summary>块内项目的手动顺序，保存文件名而非完整路径，避免块重命名后顺序失效。</summary>
     public List<string> ItemOrder { get; set; } = new();

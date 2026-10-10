@@ -91,7 +91,7 @@ docs/
 
 升级时仅复制旧配置文件，不自动移动用户收纳文件。即使 `settings.json` 已使用新的收纳根目录，历史布局的盒目录也可能仍在 `%USERPROFILE%\DesktopBlocks`；现有链接筐允许加载这个已知旧根目录，重命名只在原目录内进行。
 
-自动烟测使用 `scripts/run-test-sandbox.ps1`。脚本设置 `DESKTOPICONSSTORAGE_TEST_ROOT`，把桌面、收纳目录、配置、实例锁和构建产物隔离到 `artifacts/test-sandbox`；自动测试拒绝沙盒外输入，也不写开机自启注册表。手动体验直接运行当前分支的 Debug 程序，使用真实桌面与现有配置。`DESKTOPICONSSTORAGE_CONFIG_DIR` 可用于一般配置重定向，但不代替自动烟测的完整文件隔离。
+2026-10-09 起不再有独立测试沙盒：`RuntimePaths` 机制、`scripts/run-test-sandbox.ps1` 与 `tests/ShortcutBasketSmoke` 已移除。开发与 AI 辅助验证统一遵守仓库根目录 `AGENTS.md` 规则一——禁止使用真实桌面或收纳目录中的文件，必须在 `%TEMP%` 下自建模拟文件并在验证后清理。`DESKTOPICONSSTORAGE_CONFIG_DIR` 仍可用于一般配置重定向。
 
 ### 4.1 settings.json
 
@@ -109,7 +109,7 @@ docs/
 
 ### 4.2 layout.json
 
-每个收纳盒保存 ID、名称、固定模式（`move`/`link`）、文件夹路径、坐标、宽高、名称显示覆盖以及手动图标顺序。链接筐另保存 2～10 的预览行列规格；旧布局缺少模式时按实体盒读取。坐标和尺寸按物理像素保存。
+每个收纳盒保存 ID、名称、固定模式（`move`/`link`）、文件夹路径、坐标、宽高、名称显示覆盖以及手动图标顺序。链接筐另保存 2～10 的预览行列规格；旧布局缺少模式时按实体盒读取。盒体坐标和尺寸按物理像素保存。2026-10-10 已移除桌面图标原坐标记录与恢复；旧布局中的 `desktopPositions` 字段加载时忽略，后续保存不再写入。删除收纳盒、一键全部还原及卸载还原仅将文件移回桌面，图标位置交由 Windows 排布。
 
 ### 4.3 文件冲突
 
@@ -122,7 +122,7 @@ docs/
 - `BlockWindow` 创建 `HwndSource` 顶层窗口。
 - owner 指向包含 `SHELLDLL_DefView` 的 Progman/WorkerW。
 - 几何更新使用 `SWP_NOZORDER`，避免移动或缩放时破坏桌面层级。
-- 圆角同时使用 DWM corner preference、窗口区域和 WPF 几何裁剪。
+- 实体盒、链接筐预览和展开窗口统一使用 `RoundedSurface` 外框与 `WindowChromeService` 原生轮廓：8 DIP 外圆角、1 DIP 单层描边，内部裁剪扣除描边宽度；保留旧实体盒的 DWM 圆角偏好，并用窗口区域裁剪原生材质；关闭系统描边，避免重复边框。不能禁用 DWM 圆角，否则 Acrylic 底层可能露出矩形角。设置窗口保留系统标题栏，通过同一服务使用系统圆角。
 
 ### 5.2 毛玻璃
 
@@ -164,11 +164,11 @@ dotnet build DesktopIconsStorage.sln
 .\src\App\bin\Debug\net8.0-windows\DesktopIconsStorage.exe
 ```
 
-以上直接运行方式使用真实桌面和配置，适合用户亲自验证。编码烟测请运行 `scripts/run-test-sandbox.ps1`，只使用脚本生成的测试文件与应用图标副本。
+以上直接运行方式使用真实桌面和配置，仅适合用户亲自验证；AI 辅助开发不得使用此方式操作真实文件（见 `AGENTS.md`）。
 
 ### 6.2 Release
 
-发布构建只能在功能合并到 `main` 后执行；功能分支的日常验证使用上面的隔离脚本。
+发布构建只能在功能合并到 `main` 后执行；功能分支的日常验证只做 Debug/Release 编译检查。
 
 ```powershell
 dotnet build DesktopIconsStorage.sln -c Release
@@ -234,18 +234,15 @@ git push origin v0.4.0
 
 ## 9. 测试
 
-链接筐提供独立烟测；发布前仍需执行以下手工检查。
+2026-10-09 起独立烟测项目与沙盒脚本已移除；构建检查以编译通过为准，行为验证由用户在真实环境手动完成，AI 辅助验证只能用 `%TEMP%` 下的自建模拟文件（见 `AGENTS.md`）。
 
 ### 9.1 构建检查
 
 ```powershell
-.\scripts\run-test-sandbox.ps1
-$testBin = Join-Path (Get-Location) 'artifacts\test-sandbox\SmokeBin'
-dotnet build tests\ShortcutBasketSmoke\ShortcutBasketSmoke.csproj "-p:OutputPath=$testBin"
-& (Join-Path $testBin 'ShortcutBasketSmoke.exe')
+dotnet build DesktopIconsStorage.sln -c Release
 ```
 
-测试脚本把 Debug 构建放到独立目录，即使正式应用正在运行，也不会覆盖它占用的 DLL。功能分支不执行发布脚本；合并到 `main` 后才做 Release 构建与安装器检查。
+功能分支不执行发布脚本；合并到 `main` 后才做 Release 构建与安装器检查。
 
 ### 9.2 发布检查
 
@@ -274,7 +271,7 @@ dotnet build tests\ShortcutBasketSmoke\ShortcutBasketSmoke.csproj "-p:OutputPath
 - 移入子文件夹确认与非法嵌套拦截。
 - Explorer 重启后的窗口恢复。
 - 多显示器和不同 DPI。
-- 链接筐小盒只预览图标，默认 2×2；右键规格与居中弹窗双向动画正常。
+- 链接筐小盒只预览图标，默认 2×2；盒名位于盒外上方并左对齐，右键“显示收纳盒名称”可以切换并保存状态；拖动、重命名及 Explorer 重建时标题同步更新。右键规格与居中弹窗双向动画正常。
 - 展开窗口名称开关、深浅主题悬浮提示、快捷方式拖放/粘贴和原文件路径不变。
 - 删除链接筐与卸载时只处理 `.lnk`；功能分支不会触发发布流程。
 

@@ -49,9 +49,6 @@ public class AppHost : IDisposable
 
             Log("Run: loading settings");
             Settings = JsonStore.Load<AppSettings>(JsonStore.SettingsPath);
-            // 测试运行强制使用隔离目录，防止旧设置指向真实收纳数据。
-            if (RuntimePaths.SandboxStorageRoot is { } sandboxStorage)
-                Settings.StorageRoot = sandboxStorage;
             ThemeResourceManager.Apply(ThemePalette, AccentColor);
             AutostartService.RecordStorageRoot(Settings.StorageRoot);
             Blocks = new BlockManager(Settings);
@@ -387,24 +384,17 @@ public class AppHost : IDisposable
 
     public void RestoreAllWithConfirm()
     {
-        var linkCount = Blocks.Blocks.Where(b => b.IsLink)
-            .Sum(b => Blocks.EnumerateItems(b).Count);
         var moveCount = Blocks.Blocks.Where(b => !b.IsLink)
             .Sum(b => Blocks.EnumerateItems(b).Count);
+        // 2026-10-09：链接筐不参与一键还原——筐内只是引用，原件从未离开原位，
+        // 不存在"还原"语义；清空 .lnk 只会损失用户的收纳结果。
         var result = MessageBox.Show(
-            $"实体盒 {moveCount} 项移回桌面；链接筐 {linkCount} 个快捷方式移入回收站。\n" +
-            "快捷方式目标保持原位，收纳盒会保留。是否继续？",
+            $"将把实体盒中的 {moveCount} 个项目移回桌面；快捷方式收纳筐不受影响。\n是否继续？",
             "一键全部还原", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (result != MessageBoxResult.Yes) return;
 
         try
         {
-            foreach (var block in Blocks.Blocks.Where(b => b.IsLink))
-            {
-                var links = Blocks.GetValidatedLinkFiles(block);
-                if (!ShellFileService.RecycleDelete(IntPtr.Zero, links))
-                    throw new IOException($"清空链接筐失败：{block.Name}");
-            }
             Blocks.RestoreAllToDesktop();
             // 通知 Shell 刷新桌面与所有块文件夹
             ShellNotifyService.NotifyFolderChanged(Blocks.DesktopPath);
@@ -485,17 +475,14 @@ public class AppHost : IDisposable
         {
             JsonStore.MigrateLegacyFiles();
             var settings = JsonStore.Load<AppSettings>(JsonStore.SettingsPath);
-            if (RuntimePaths.SandboxStorageRoot is { } sandboxStorage)
-                settings.StorageRoot = sandboxStorage;
             var manager = new BlockManager(settings);
             manager.Load();
             var blockFolders = manager.Blocks.Select(block => block.FolderPath).ToList();
-
             manager.RestoreAllToDesktop();
+            manager.Save();
             foreach (var block in manager.Blocks.Where(b => b.IsLink))
                 manager.DeleteLinkFilesForUninstall(block);
             ShellNotifyService.NotifyFolderChanged(manager.DesktopPath);
-
             foreach (var folder in blockFolders)
                 DeleteDirectoryIfEmpty(folder);
             DeleteDirectoryIfEmpty(settings.StorageRoot);
@@ -517,7 +504,6 @@ public class AppHost : IDisposable
     /// <summary>只删除确认为空的目录，绝不递归清除未知或隐藏的用户文件。</summary>
     private static void DeleteDirectoryIfEmpty(string path)
     {
-        RuntimePaths.EnsureSandboxPath(path);
         if (!Directory.Exists(path)) return;
         if (!Directory.EnumerateFileSystemEntries(path).Any())
             Directory.Delete(path, recursive: false);

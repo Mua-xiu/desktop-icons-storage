@@ -18,7 +18,7 @@
 DesktopIconsStorage 是一款原生 Windows 桌面图标收纳工具。它通过桌面层上的实时毛玻璃收纳盒整理文件、文件夹和快捷方式，同时保留 Windows 桌面的使用习惯。
 
 > [!IMPORTANT]
-> 创建时可选择实体收纳盒或快捷方式收纳筐。实体盒会移动真实文件；链接筐只创建或复制快捷方式，原项目保留在原位置。重要文件仍建议提前备份。
+> 创建时可选择实体收纳盒或快捷方式收纳筐。实体盒会移动真实文件；链接筐只创建或复制快捷方式，原项目保留在原位置。重要文件仍建议提前备份。若桌面由 OneDrive 同步，移入实体盒的文件会退出同步范围，还原回桌面时恢复同步。
 
 ## 功能特性
 
@@ -87,11 +87,7 @@ cd desktop-icons-storage
 dotnet build DesktopIconsStorage.sln
 ```
 
-编码验证请运行隔离脚本。它只准备测试文件和仓库自带应用图标副本，不读取真实桌面图标文件：
-
-```powershell
-.\scripts\run-test-sandbox.ps1
-```
+构建验证以 `dotnet build` 通过为准。
 
 需要亲自用桌面文件体验时，直接运行当前分支的 Debug 程序：
 
@@ -105,7 +101,7 @@ dotnet build src\App\DesktopIconsStorage.App.csproj -c Debug
 生成自包含便携版和安装器：
 
 ```powershell
-.\scripts\build-release.ps1 -Version 0.5.0
+.\scripts\build-release.ps1 -Version 0.6.0
 ```
 
 安装器构建需要 Inno Setup 6；使用 `-SkipInstaller` 可以只生成便携版。仅在功能合并到 `main` 后，才允许从 `main` 或已合并提交的 `v*` 标签构建发布包；功能分支的提交和推送不会发布新版本。

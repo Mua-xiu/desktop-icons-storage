@@ -233,7 +233,9 @@ public partial class SettingsWindow : Window
     private void ApplyNativeWindowTheme()
     {
         if (PresentationSource.FromVisual(this) == null) return;
-        BackdropService.ApplyWindowTheme(new WindowInteropHelper(this).Handle, _host.IsDarkTheme);
+        var hwnd = new WindowInteropHelper(this).Handle;
+        BackdropService.ApplyWindowTheme(hwnd, _host.IsDarkTheme);
+        WindowChromeService.ApplyStandardWindow(hwnd);
     }
 
     /// <summary>设置窗口图标与当前应用主题同步。</summary>

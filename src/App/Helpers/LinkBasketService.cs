@@ -12,7 +12,6 @@ public static class LinkBasketService
         IEnumerable<string> sourcePaths)
     {
         if (!block.IsLink) throw new IOException("目标不是快捷方式收纳筐。");
-        RuntimePaths.EnsureSandboxPath(block.FolderPath);
         Directory.CreateDirectory(block.FolderPath);
         var errors = new List<string>();
         var added = 0;
@@ -22,7 +21,6 @@ public static class LinkBasketService
             try
             {
                 var fullPath = Path.GetFullPath(source);
-                RuntimePaths.EnsureSandboxPath(fullPath);
                 if (!File.Exists(fullPath) && !Directory.Exists(fullPath))
                     throw new IOException("源项目不存在。");
                 if (IsInOrContainsBlock(fullPath, block.FolderPath))
@@ -56,4 +54,30 @@ public static class LinkBasketService
                block.StartsWith(current + Path.DirectorySeparatorChar,
                    StringComparison.OrdinalIgnoreCase);
     }
+
+    /// <summary>
+    /// 体检单个快捷方式（2026-10-09 路线图第 6 项）。
+    /// 判定原则：网络盘离线、盘符不在、Shell 虚拟目标和无法解析一律标 Unreachable（不判死），
+    /// 只有"盘在、路径不在"的本地目标才算 Missing；File.Exists == false 不是永久失效的唯一依据。
+    /// </summary>
+    public static LinkHealth EvaluateHealth(string linkPath)
+    {
+        string? target;
+        try { target = ShellLinkService.ReadTarget(linkPath); }
+        catch { return LinkHealth.Unreachable; }
+        if (string.IsNullOrWhiteSpace(target)) return LinkHealth.Unreachable;
+        if (File.Exists(target) || Directory.Exists(target)) return LinkHealth.Ok;
+        if (target.StartsWith(@"\\", StringComparison.Ordinal)) return LinkHealth.Unreachable;
+        var root = Path.GetPathRoot(target);
+        if (string.IsNullOrEmpty(root) || !Directory.Exists(root)) return LinkHealth.Unreachable;
+        return LinkHealth.Missing;
+    }
+}
+
+/// <summary>快捷方式体检结果：Missing = 本地目标已删除（可清理）；Unreachable = 暂时不可达（不判死）。</summary>
+public enum LinkHealth
+{
+    Ok,
+    Missing,
+    Unreachable,
 }

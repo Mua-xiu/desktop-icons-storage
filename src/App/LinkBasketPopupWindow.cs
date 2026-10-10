@@ -15,7 +15,6 @@ public sealed class LinkBasketPopupWindow : IDisposable
 {
     private const int WsPopup = unchecked((int)0x80000000);
     private const int WsVisible = 0x10000000;
-    private const int WsBorder = 0x00800000;
     private const int WsExToolWindow = 0x00000080;
     private readonly BlockWindow _tile;
     private readonly AppHost _host;
@@ -57,8 +56,8 @@ public sealed class LinkBasketPopupWindow : IDisposable
         var parameters = new HwndSourceParameters("DesktopIconsStorage.LinkBasketPopup")
         {
             ParentWindow = _desktopHost,
-            // 2026-09-24：保留 1 像素原生边框，DWM 才能像设置窗口一样绘制完整圆角。
-            WindowStyle = WsPopup | WsVisible | WsBorder,
+            // 2026-10-10：与实体盒共用自绘外框，取消叠加的原生边框。
+            WindowStyle = WsPopup | WsVisible,
             ExtendedWindowStyle = WsExToolWindow,
             PositionX = _finish.X,
             PositionY = _finish.Y,
@@ -89,7 +88,7 @@ public sealed class LinkBasketPopupWindow : IDisposable
         var acrylic = BackdropService.Apply(Hwnd, color, 51,
             blurEnabled: true, dark: true) == BackdropService.BackdropKind.Acrylic;
         _view.ApplyTheme(acrylic);
-        DesktopEmbedService.ApplySystemRoundedCorners(Hwnd);
+        WindowChromeService.ApplySurface(Hwnd, _finish.W, _finish.H);
     }
 
     public void CloseAnimated()
@@ -120,7 +119,7 @@ public sealed class LinkBasketPopupWindow : IDisposable
         _completionTimer.Start();
     }
 
-    /// <summary>动画结束时恢复精确圆角，并交还焦点或销毁弹窗。</summary>
+    /// <summary>动画结束时交还焦点或销毁弹窗。</summary>
     private void FinishAnimation(double target, int version)
     {
         if (_source == null || version != _animationVersion) return;

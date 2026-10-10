@@ -29,11 +29,13 @@ public partial class CreateBlockDialog : Window
         LinkMode.Checked += (_, _) =>
         {
             PreviewOptions.Visibility = Visibility.Visible;
+            MoveModeNote.Visibility = Visibility.Collapsed;
             if (NameBox.Text == "新建收纳盒") NameBox.Text = "新建收纳筐";
         };
         MoveMode.Checked += (_, _) =>
         {
             PreviewOptions.Visibility = Visibility.Collapsed;
+            MoveModeNote.Visibility = Visibility.Visible;
             if (NameBox.Text == "新建收纳筐") NameBox.Text = "新建收纳盒";
         };
         SourceInitialized += (_, _) =>

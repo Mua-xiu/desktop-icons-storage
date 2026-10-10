@@ -3,7 +3,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Effects;
 using DesktopIconsStorage.App.Helpers;
 using DesktopIconsStorage.Core.Models;
 using DesktopIconsStorage.Platform.Services;
@@ -42,7 +41,6 @@ public partial class LinkBasketTileView : UserControl
     /// <summary>目录变更时只取前 N 个快捷方式图标，小盒从不生成名称标签或提示。</summary>
     public void RefreshItems()
     {
-        TitleText.Text = _window.Block.Name;
         PreviewGrid.Rows = Math.Clamp(_window.Block.PreviewRows,
             PreviewGridLimits.Minimum, PreviewGridLimits.Maximum);
         PreviewGrid.Columns = Math.Clamp(_window.Block.PreviewColumns,
@@ -79,15 +77,6 @@ public partial class LinkBasketTileView : UserControl
         var tint = Color.FromRgb(0x70, 0x70, 0x70);
         TintLayer.Background = acrylic ? Brushes.Transparent
             : new SolidColorBrush(Color.FromArgb(26, tint.R, tint.G, tint.B));
-        // 小盒固定透明背景会叠在任意壁纸上，标题不能仅按应用主题选黑或白。
-        TitleText.Foreground = Brushes.White;
-        TitleText.Effect = new DropShadowEffect
-        {
-            Color = Colors.Black,
-            BlurRadius = 4,
-            ShadowDepth = 0,
-            Opacity = 0.95
-        };
         TileBorder.BorderBrush = new SolidColorBrush(
             Color.FromArgb(110, 255, 255, 255));
     }
@@ -149,6 +138,16 @@ public partial class LinkBasketTileView : UserControl
         var rename = new MenuItem { Header = "重命名" };
         rename.Click += (_, _) => BeginRename();
         menu.Items.Add(rename);
+        var showName = new MenuItem
+        {
+            Header = "显示收纳盒名称", IsCheckable = true, IsChecked = _window.Block.ShowBlockName
+        };
+        showName.Click += (_, _) =>
+        {
+            _window.Block.ShowBlockName = showName.IsChecked;
+            _host.PersistLayout();
+        };
+        menu.Items.Add(showName);
         var sizes = new MenuItem { Header = "设置预览规格…" };
         sizes.Click += (_, _) =>
         {
@@ -172,7 +171,6 @@ public partial class LinkBasketTileView : UserControl
     private void BeginRename()
     {
         TitleEditor.Text = _window.Block.Name;
-        TitleText.Visibility = Visibility.Collapsed;
         TitleEditor.Visibility = Visibility.Visible;
         DesktopEmbedService.ActivateWindow(_window.Hwnd);
         TitleEditor.Focus();
@@ -185,7 +183,6 @@ public partial class LinkBasketTileView : UserControl
         if (e.Key == Key.Escape)
         {
             TitleEditor.Visibility = Visibility.Collapsed;
-            TitleText.Visibility = Visibility.Visible;
             e.Handled = true;
         }
     }
@@ -194,10 +191,8 @@ public partial class LinkBasketTileView : UserControl
     {
         if (TitleEditor.Visibility != Visibility.Visible) return;
         TitleEditor.Visibility = Visibility.Collapsed;
-        TitleText.Visibility = Visibility.Visible;
         var name = TitleEditor.Text.Trim();
         if (name.Length > 0 && name != _window.Block.Name)
             _host.RenameBlock(_window, name);
-        TitleText.Text = _window.Block.Name;
     }
 }
